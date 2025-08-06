@@ -103,12 +103,21 @@ router.beforeEach(async (to, from, next) => {
     return;
   }
 
-  // 已登录状态获取用户信息
+  // 没有token，直接跳转到登录页
+  if (!token) {
+    next({ name: 'Login', query: { redirect: to.fullPath } });
+    return;
+  }
+
+  // 已有token但没有用户信息，尝试获取用户信息
   if (token && !userStore.userInfo.user_id) {
     try {
       await userStore.getUserInfoAction();
     } catch (error) {
+      console.error('路由守卫中获取用户信息失败:', error);
       userStore.logout();
+      next({ name: 'Login', query: { redirect: to.fullPath } });
+      return;
     }
   }
 

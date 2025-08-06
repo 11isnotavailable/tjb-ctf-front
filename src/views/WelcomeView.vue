@@ -30,7 +30,7 @@
           <div class="nav-item" @click="goToHome"><el-icon><HomeFilled /></el-icon><span>首页</span></div>
           <div class="nav-item"><el-icon><DataLine /></el-icon><span>平台介绍</span></div>
           <div class="nav-item" @click="goToQuestions"><el-icon><List /></el-icon><span>题目</span></div>
-          <div class="nav-item"><el-icon><Monitor /></el-icon><span>部署</span></div>
+          <div class="nav-item" @click="goToDeploy"><el-icon><Monitor /></el-icon><span>部署</span></div>
           <div class="nav-item"><CrossSwords class="custom-icon" /><span>一键攻击</span></div>
           <div class="nav-item"><Shield class="custom-icon" /><span>智能防御</span></div>
         </div>
@@ -188,6 +188,10 @@ const goToHome = () => {
 };
 const goToQuestions = () => {
   router.push('/home/questions');
+};
+
+const goToDeploy = () => {
+  router.push('/home/deploy');
 };
 
 // 在组件挂载时加载保存的主题
