@@ -62,7 +62,7 @@ userStore.init().then(() => {
 app.use(ElementPlus)
 app.use(router)
 
-app.mount('#app')// 输出Vue和Router已准备就绪
+app.mount('#app')
+
+// 输出Vue和Router已准备就绪
 console.log('应用已挂载');
-
-

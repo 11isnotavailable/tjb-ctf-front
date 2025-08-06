@@ -4,12 +4,12 @@ import { getToken } from '@/utils/auth';
 
 const routes = [
   // 欢迎页，作为入口页面，不需要认证
-  {
-    path: '/',
+    {
+      path: '/',
     name: 'Welcome',
     component: () => import('@/views/WelcomeView.vue'),
     meta: { requiresAuth: false, title: '西电 CTF 终端' }
-  },
+    },
     {
     path: '/login',
     name: 'Login',
@@ -63,7 +63,12 @@ const routes = [
         component: () => import('@/views/test/TestDetailView.vue'),
         meta: { title: '题目详情测试' }
       },
-
+      {
+        path: 'deploy',
+        name: 'Deploy',
+        component: () => import('../views/DeployView.vue'),
+        meta: { title: 'AI 部署助手' }
+      }
     ]
   },
   {

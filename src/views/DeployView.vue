@@ -202,77 +202,74 @@
       </div>
     </div>
 
-    <!-- 第三步：确认生成 -->
+    <!-- 第三步：网络拓扑配置 -->
     <div v-if="currentStep === 3" class="step-content">
       <div class="form-card">
         <div class="form-header">
-          <h2>✅ 确认生成</h2>
-          <p>请确认您的题目信息，点击生成按钮开始创建CTF题目</p>
+          <h3>🌐 网络拓扑配置</h3>
+          <p>配置您的CTF题目网络环境</p>
         </div>
         
-        <div class="form-body">
-          <!-- 题目信息预览 -->
-          <div class="preview-section">
-            <h3>📋 题目信息</h3>
-            <div class="preview-grid">
-              <div class="preview-item">
-                <label>题目标题:</label>
-                <span>{{ formData.title }}</span>
-              </div>
-              <div class="preview-item">
-                <label>难度等级:</label>
-                <span class="difficulty-stars">
-                  <span v-for="i in 5" :key="i" class="star" :class="{ active: i <= formData.difficulty }">★</span>
-                  <span class="difficulty-text">{{ getDifficultyText(formData.difficulty) }}</span>
-                </span>
-              </div>
-              <div class="preview-item">
-                <label>是否启用:</label>
-                <span :class="formData.enabled ? 'status-enabled' : 'status-disabled'">
-                  {{ formData.enabled ? '是' : '否' }}
-                </span>
-              </div>
-              <div class="preview-item">
-                <label>Flag模板:</label>
-                <span class="code-text">{{ formData.flagTemplate }}</span>
-              </div>
-              <div class="preview-item">
-                <label>有效时间:</label>
-                <span>{{ formData.validTime }}秒</span>
-              </div>
-              <div class="preview-item">
-                <label>最大尝试次数:</label>
-                <span>{{ formData.maxAttempts }}次</span>
+        <div class="topology-container">
+          <!-- 网络区域列表 -->
+          <div class="network-zones">
+            <!-- 内网区域 -->
+            <div class="zone-row">
+              <div class="zone-label">内网:</div>
+              <div class="topology-nodes">
+                <TopologyNode 
+                  v-for="node in topology.internal" 
+                  :key="node.id"
+                  :node="node"
+                  :zone="'internal'"
+                  @add-branch="addBranch"
+                  @configure="configureNode"
+                />
+                <AddNodeButton 
+                  v-if="topology.internal.length === 0"
+                  zone="internal"
+                  @add="addInitialNode"
+                />
               </div>
             </div>
             
-            <div class="preview-item full-width">
-              <label>题目简介:</label>
-              <div class="description-preview">{{ formData.description }}</div>
+            <!-- DMZ区域 -->
+            <div class="zone-row">
+              <div class="zone-label">DMZ:</div>
+              <div class="topology-nodes">
+                <TopologyNode 
+                  v-for="node in topology.dmz" 
+                  :key="node.id"
+                  :node="node"
+                  :zone="'dmz'"
+                  @add-branch="addBranch"
+                  @configure="configureNode"
+                />
+                <AddNodeButton 
+                  v-if="topology.dmz.length === 0"
+                  zone="dmz"
+                  @add="addInitialNode"
+                />
+              </div>
             </div>
-          </div>
-          
-          <!-- 需求描述预览 -->
-          <div class="preview-section">
-            <h3>💡 需求描述</h3>
-            <div class="requirements-preview">{{ formData.requirements }}</div>
-          </div>
-          
-          <!-- 生成状态 -->
-          <div v-if="isGenerating" class="generation-status">
-            <div class="loading-spinner"></div>
-            <p>正在生成题目，请稍候...</p>
-            <div class="progress-text">{{ generationProgress }}</div>
-          </div>
-          
-          <!-- 生成结果 -->
-          <div v-if="generationResult" class="generation-result">
-            <h3>🎉 生成完成</h3>
-            <div class="result-info">
-              <p>题目已成功生成！</p>
-              <div class="result-actions">
-                <button class="btn btn-primary" @click="viewGeneratedQuestion">查看题目</button>
-                <button class="btn btn-secondary" @click="downloadFiles">下载文件</button>
+            
+            <!-- 攻击区域 -->
+            <div class="zone-row">
+              <div class="zone-label">攻击区:</div>
+              <div class="topology-nodes">
+                <TopologyNode 
+                  v-for="node in topology.attack" 
+                  :key="node.id"
+                  :node="node"
+                  :zone="'attack'"
+                  @add-branch="addBranch"
+                  @configure="configureNode"
+                />
+                <AddNodeButton 
+                  v-if="topology.attack.length === 0"
+                  zone="attack"
+                  @add="addInitialNode"
+                />
               </div>
             </div>
           </div>
@@ -281,42 +278,273 @@
         <!-- 导航按钮 -->
         <div class="card-footer">
           <button 
-            v-if="currentStep > 1 && !isGenerating" 
+            v-if="currentStep > 1" 
             class="nav-btn prev-btn" 
             @click="prevStep"
           >
             ← 上一步
           </button>
           <button 
-            v-if="!generationResult"
             class="nav-btn submit-btn" 
-            @click="generateQuestion"
-            :disabled="!canSubmit || isGenerating"
+            @click="submitForm"
+            :disabled="!canSubmit"
           >
-            <span v-if="isGenerating">生成中...</span>
-            <span v-else>生成题目 🚀</span>
-          </button>
-          <button 
-            v-if="generationResult"
-            class="nav-btn submit-btn" 
-            @click="resetForm"
-          >
-            重新开始
+            生成题目 🚀
           </button>
         </div>
       </div>
     </div>
 
-
+    <!-- 子网配置弹窗 -->
+    <SubnetConfigDialog 
+      v-model="showSubnetDialog"
+      @confirm="handleSubnetConfig"
+    />
+    
+    <!-- 节点配置弹窗 -->
+    <NodeConfigDialog 
+      v-model="showNodeDialog"
+      :node="currentConfigNode"
+      @confirm="handleNodeConfig"
+    />
 
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, defineComponent } from 'vue'
 import { ElMessage } from 'element-plus'
 
+// 拓扑节点组件
+const TopologyNode = defineComponent({
+  name: 'TopologyNode',
+  props: {
+    node: Object,
+    zone: String
+  },
+  emits: ['add-branch', 'configure'],
+  template: `
+    <div class="topology-node-container">
+      <div 
+        class="topology-node"
+        :class="[
+          'zone-' + zone,
+          node.type,
+          { configured: node.configured }
+        ]"
+        @click="handleNodeClick"
+      >
+        <div v-if="node.type === 'add'" class="add-icon">+</div>
+        <div v-else-if="node.type === 'subnet'" class="node-text">配置子网网段</div>
+        <div v-else-if="node.type === 'subnet-configured'" class="node-text">{{ node.subnet }}</div>
+        <div v-else-if="node.type === 'config'" class="node-text">具体配置</div>
+        <div v-else-if="node.type === 'configured'" class="configured-node">
+          <div class="node-type">{{ node.nodeType }}</div>
+          <div class="node-system">{{ node.system }}</div>
+          <div class="node-ip">{{ node.ip }}</div>
+        </div>
+      </div>
+      
+      <div class="node-connections" v-if="node.children && node.children.length > 0">
+        <div class="connection-line"></div>
+        <div class="child-nodes">
+          <TopologyNode 
+            v-for="child in node.children"
+            :key="child.id"
+            :node="child"
+            :zone="zone"
+            @add-branch="$emit('add-branch', $event)"
+            @configure="$emit('configure', $event)"
+          />
+        </div>
+      </div>
+    </div>
+  `,
+  methods: {
+    handleNodeClick() {
+      if (this.node.type === 'add') {
+        this.$emit('add-branch', this.node)
+      } else if (this.node.type === 'subnet' || this.node.type === 'config') {
+        this.$emit('configure', this.node)
+      }
+    }
+  }
+})
 
+// 添加节点按钮组件  
+const AddNodeButton = defineComponent({
+  props: {
+    zone: String
+  },
+  emits: ['add'],
+  template: `
+    <div 
+      class="topology-node add-node-btn"
+      :class="'zone-' + zone"
+      @click="$emit('add', zone)"
+    >
+      <div class="add-icon">+</div>
+    </div>
+  `
+})
+
+// 子网配置对话框组件
+const SubnetConfigDialog = defineComponent({
+  props: {
+    modelValue: Boolean
+  },
+  emits: ['update:modelValue', 'confirm'],
+  setup(props, { emit }) {
+    const subnet = ref('')
+    
+    const handleConfirm = () => {
+      if (subnet.value.trim()) {
+        emit('confirm', { subnet: subnet.value })
+        subnet.value = ''
+        emit('update:modelValue', false)
+      }
+    }
+    
+    const handleCancel = () => {
+      subnet.value = ''
+      emit('update:modelValue', false)
+    }
+    
+    return { subnet, handleConfirm, handleCancel }
+  },
+  template: `
+    <div v-if="modelValue" class="dialog-overlay" @click.self="handleCancel">
+      <div class="dialog-content">
+        <h3>配置子网网段</h3>
+        <div class="form-group">
+          <input 
+            v-model="subnet"
+            type="text" 
+            class="form-input"
+            placeholder="xxx.xxx.xxx.xxx"
+            @keyup.enter="handleConfirm"
+          />
+        </div>
+        <div class="dialog-buttons">
+          <button class="btn btn-secondary" @click="handleCancel">取消</button>
+          <button class="btn btn-primary" @click="handleConfirm">确定</button>
+        </div>
+      </div>
+    </div>
+  `
+})
+
+// 节点配置对话框组件
+const NodeConfigDialog = defineComponent({
+  props: {
+    modelValue: Boolean,
+    node: Object
+  },
+  emits: ['update:modelValue', 'confirm'],
+  setup(props, { emit }) {
+    const nodeType = ref('Web服务器')
+    const system = ref('apache+php')
+    const ip = ref('')
+    const image = ref('apache:php')
+    
+    const nodeTypeOptions = [
+      'Web服务器',
+      '数据库服务器', 
+      '应用服务器',
+      '文件服务器',
+      '代理服务器'
+    ]
+    
+    const systemOptions = {
+      'Web服务器': ['apache+php', 'nginx+php', 'tomcat+java', 'iis+asp'],
+      '数据库服务器': ['mysql', 'postgresql', 'mongodb', 'redis'],
+      '应用服务器': ['nodejs', 'python+django', 'java+spring', 'dotnet'],
+      '文件服务器': ['ftp', 'sftp', 'samba', 'nfs'],
+      '代理服务器': ['nginx', 'apache', 'haproxy', 'envoy']
+    }
+    
+    const handleConfirm = () => {
+      if (nodeType.value && system.value && ip.value) {
+        emit('confirm', {
+          nodeType: nodeType.value,
+          system: system.value,
+          ip: ip.value,
+          image: image.value
+        })
+        resetForm()
+        emit('update:modelValue', false)
+      }
+    }
+    
+    const handleCancel = () => {
+      resetForm()
+      emit('update:modelValue', false)
+    }
+    
+    const resetForm = () => {
+      nodeType.value = 'Web服务器'
+      system.value = 'apache+php'
+      ip.value = ''
+      image.value = 'apache:php'
+    }
+    
+    return { 
+      nodeType, 
+      system, 
+      ip, 
+      image, 
+      nodeTypeOptions, 
+      systemOptions, 
+      handleConfirm, 
+      handleCancel 
+    }
+  },
+  template: `
+    <div v-if="modelValue" class="dialog-overlay" @click.self="handleCancel">
+      <div class="dialog-content config-dialog">
+        <h3>节点配置</h3>
+        <div class="form-group">
+          <label>类型:</label>
+          <select v-model="nodeType" class="form-select">
+            <option v-for="type in nodeTypeOptions" :key="type" :value="type">
+              {{ type }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>系统:</label>
+          <select v-model="system" class="form-select">
+            <option v-for="sys in systemOptions[nodeType]" :key="sys" :value="sys">
+              {{ sys }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>地址:</label>
+          <input 
+            v-model="ip"
+            type="text" 
+            class="form-input"
+            placeholder="xxx.xxx.xxx.xxx"
+          />
+        </div>
+        <div class="form-group">
+          <label>镜像:</label>
+          <select v-model="image" class="form-select">
+            <option value="apache:php">apache:php</option>
+            <option value="nginx:php">nginx:php</option>
+            <option value="mysql:latest">mysql:latest</option>
+            <option value="nodejs:alpine">nodejs:alpine</option>
+          </select>
+        </div>
+        <div class="dialog-buttons">
+          <button class="btn btn-secondary" @click="handleCancel">取消</button>
+          <button class="btn btn-primary" @click="handleConfirm">确定</button>
+        </div>
+      </div>
+    </div>
+  `
+})
 
 // 当前步骤
 const currentStep = ref(1)
@@ -333,10 +561,21 @@ const formData = ref({
   requirements: ''
 })
 
-// 生成相关状态
-const isGenerating = ref(false)
-const generationProgress = ref('')
-const generationResult = ref(null)
+// 拓扑数据
+const topology = ref({
+  internal: [],  // 内网节点
+  dmz: [],       // DMZ节点
+  attack: []     // 攻击区节点
+})
+
+// 对话框状态
+const showSubnetDialog = ref(false)
+const showNodeDialog = ref(false)
+const currentConfigNode = ref(null)
+const currentSubnetConfig = ref(null)
+
+// 节点ID计数器
+const nodeIdCounter = ref(0)
 
 // 计算属性
 const canProceed = computed(() => {
@@ -353,9 +592,9 @@ const canProceed = computed(() => {
 
 const canSubmit = computed(() => {
   if (currentStep.value === 3) {
-    return formData.value.title.trim() !== '' && 
-           formData.value.description.trim() !== '' &&
-           formData.value.requirements.trim() !== ''
+    // 第三步需要至少有一个配置好的节点
+    const allNodes = [...topology.value.internal, ...topology.value.dmz, ...topology.value.attack]
+    return allNodes.some(node => node.configured)
   }
   return formData.value.requirements.trim() !== ''
 })
@@ -375,68 +614,12 @@ const prevStep = () => {
   }
 }
 
-const generateQuestion = async () => {
-  if (!canSubmit.value) return
-  
-  isGenerating.value = true
-  generationProgress.value = '正在分析需求...'
-  
-  try {
-    // 模拟生成过程
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    generationProgress.value = '正在生成题目框架...'
-    
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    generationProgress.value = '正在配置环境...'
-    
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    generationProgress.value = '正在生成测试用例...'
-    
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    generationProgress.value = '生成完成！'
-    
-    // 设置生成结果
-    generationResult.value = {
-      success: true,
-      questionId: 'ctf_' + Date.now(),
-      files: ['docker-compose.yml', 'src/', 'writeup.md']
-    }
-    
-    ElMessage.success('题目生成成功！')
-  } catch (error) {
-    ElMessage.error('生成失败，请重试')
-    console.error('生成错误:', error)
-  } finally {
-    isGenerating.value = false
+const submitForm = () => {
+  if (canSubmit.value) {
+    ElMessage.success('正在生成CTF题目，请稍候...')
+    // 这里可以调用API提交表单数据
+    console.log('提交的表单数据:', formData.value)
   }
-}
-
-const viewGeneratedQuestion = () => {
-  ElMessage.info('跳转到题目详情页面')
-  // 这里可以跳转到题目详情页
-}
-
-const downloadFiles = () => {
-  ElMessage.info('开始下载生成的文件')
-  // 这里可以下载生成的文件
-}
-
-const resetForm = () => {
-  currentStep.value = 1
-  isGenerating.value = false
-  generationProgress.value = ''
-  generationResult.value = null
-  formData.value = {
-    title: '',
-    description: '',
-    enabled: true,
-    flagTemplate: 'flag{...}',
-    validTime: 3600,
-    difficulty: 3,
-    maxAttempts: 20,
-    requirements: ''
-  }
-  ElMessage.success('已重置表单')
 }
 
 const getDifficultyText = (difficulty) => {
@@ -462,7 +645,79 @@ const formatTime = (seconds) => {
   }
 }
 
+// 拓扑相关方法
+const addInitialNode = (zone) => {
+  const nodeId = ++nodeIdCounter.value
+  const newNode = {
+    id: nodeId,
+    zone,
+    type: 'add',
+    configured: false,
+    children: []
+  }
+  topology.value[zone].push(newNode)
+}
 
+const addBranch = (parentNode) => {
+  const nodeId = ++nodeIdCounter.value
+  const newNode = {
+    id: nodeId,
+    zone: parentNode.zone,
+    type: 'subnet',
+    configured: false,
+    children: [],
+    parent: parentNode.id
+  }
+  parentNode.children.push(newNode)
+  showSubnetDialog.value = true
+  currentSubnetConfig.value = newNode
+}
+
+const configureNode = (node) => {
+  if (node.type === 'subnet' || node.type === 'subnet-configured') {
+    showSubnetDialog.value = true
+    currentSubnetConfig.value = node
+  } else if (node.type === 'config') {
+    showNodeDialog.value = true
+    currentConfigNode.value = node
+  } else if (node.type === 'configured') {
+    showNodeDialog.value = true
+    currentConfigNode.value = node
+  }
+}
+
+const handleSubnetConfig = (subnetData) => {
+  if (currentSubnetConfig.value) {
+    currentSubnetConfig.value.subnet = subnetData.subnet
+    currentSubnetConfig.value.label = `配置子网网段`
+    currentSubnetConfig.value.type = 'subnet-configured'
+    
+    // 添加具体配置节点
+    const configNode = {
+      id: ++nodeIdCounter.value,
+      zone: currentSubnetConfig.value.zone,
+      type: 'config',
+      configured: false,
+      children: [],
+      parent: currentSubnetConfig.value.id,
+      label: '具体配置'
+    }
+    currentSubnetConfig.value.children.push(configNode)
+  }
+  showSubnetDialog.value = false
+  currentSubnetConfig.value = null
+}
+
+const handleNodeConfig = (nodeData) => {
+  if (currentConfigNode.value) {
+    Object.assign(currentConfigNode.value, nodeData)
+    currentConfigNode.value.configured = true
+    currentConfigNode.value.type = 'configured'
+    currentConfigNode.value.label = `${nodeData.nodeType}\n${nodeData.system}\n${nodeData.ip}`
+  }
+  showNodeDialog.value = false
+  currentConfigNode.value = null
+}
 </script>
 
 <style scoped>
@@ -898,182 +1153,246 @@ const formatTime = (seconds) => {
   justify-content: flex-end;
 }
 
-/* 第三步预览样式 */
-.preview-section {
-  margin-bottom: 32px;
-  padding: 24px;
-  background: #f8fafc;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
+/* 网络拓扑样式 */
+.topology-container {
+  padding: 24px 0;
 }
 
-.preview-section h3 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 20px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.preview-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.preview-item {
+.network-zones {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 40px;
 }
 
-.preview-item.full-width {
-  grid-column: 1 / -1;
+.zone-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  min-height: 80px;
 }
 
-.preview-item label {
-  font-weight: 500;
-  color: #64748b;
-  font-size: 0.9rem;
-}
-
-.preview-item span {
-  color: #1e293b;
-  font-weight: 500;
-}
-
-.difficulty-stars {
+.zone-label {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #374151;
+  width: 80px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 4px;
 }
 
-.star {
-  color: #e2e8f0;
-  font-size: 1.2rem;
-  transition: color 0.2s;
+.topology-nodes {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  flex: 1;
 }
 
-.star.active {
-  color: #fbbf24;
-}
-
-.difficulty-text {
-  margin-left: 8px;
-  font-size: 0.9rem;
-  color: #64748b;
-}
-
-.status-enabled {
-  color: #10b981;
-  font-weight: 600;
-}
-
-.status-disabled {
-  color: #ef4444;
-  font-weight: 600;
-}
-
-.code-text {
-  font-family: 'Courier New', monospace;
-  background: #f1f5f9;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.description-preview,
-.requirements-preview {
-  background: white;
-  padding: 16px;
+/* 拓扑节点 */
+.topology-node {
+  min-width: 120px;
+  min-height: 60px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  color: #374151;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-/* 生成状态样式 */
-.generation-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  padding: 12px 16px;
   text-align: center;
-  padding: 40px 20px;
-  background: #f0f9ff;
-  border-radius: 12px;
-  border: 2px solid #0ea5e9;
-  margin: 24px 0;
+  font-size: 0.9rem;
+  line-height: 1.3;
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #e2e8f0;
-  border-top: 4px solid #0ea5e9;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 16px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.generation-status p {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #0c4a6e;
-  margin: 0 0 12px 0;
-}
-
-.progress-text {
-  color: #0369a1;
-  font-size: 0.95rem;
-}
-
-/* 生成结果样式 */
-.generation-result {
-  text-align: center;
-  padding: 32px 20px;
-  background: #f0fdf4;
-  border-radius: 12px;
-  border: 2px solid #22c55e;
-  margin: 24px 0;
-}
-
-.generation-result h3 {
-  color: #15803d;
-  font-size: 1.3rem;
-  margin: 0 0 16px 0;
-}
-
-.result-info p {
+/* 区域颜色 */
+.topology-node.zone-internal {
+  background: #dcfce7;
   color: #166534;
-  font-size: 1.1rem;
-  margin: 0 0 20px 0;
+  border-color: #bbf7d0;
 }
 
-.result-actions {
+.topology-node.zone-dmz {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+
+.topology-node.zone-attack {
+  background: #fed7ca;
+  color: #c2410c;
+  border-color: #fdba74;
+}
+
+/* 节点类型 */
+.topology-node.add {
+  border-style: dashed;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.topology-node.add:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.topology-node.subnet,
+.topology-node.config {
+  border-style: solid;
+}
+
+.topology-node.subnet:hover,
+.topology-node.config:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.topology-node.configured {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+/* 已配置节点内容 */
+.configured-node {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.node-type {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.node-system {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.node-ip {
+  font-size: 0.75rem;
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* 节点连接线 */
+.topology-node-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.node-connections {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.connection-line {
+  width: 2px;
+  height: 30px;
+  background: #d1d5db;
+  margin-bottom: 10px;
+}
+
+.child-nodes {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* 对话框样式 */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 400px;
+  max-width: 500px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.dialog-content h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+}
+
+.dialog-content .form-group {
+  margin-bottom: 16px;
+}
+
+.dialog-content .form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dialog-content .form-input,
+.dialog-content .form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.dialog-content .form-input:focus,
+.dialog-content .form-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.dialog-buttons {
   display: flex;
   gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 24px;
 }
 
 .btn {
-  padding: 12px 24px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
 }
 
 .btn-primary {
@@ -1083,33 +1402,30 @@ const formatTime = (seconds) => {
 
 .btn-primary:hover {
   background: #2563eb;
-  transform: translateY(-1px);
 }
 
-.btn-secondary {
-  background: #6b7280;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #4b5563;
-  transform: translateY(-1px);
+.config-dialog {
+  min-width: 450px;
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .preview-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .result-actions {
+  .zone-row {
     flex-direction: column;
-    align-items: center;
+    gap: 16px;
   }
   
-  .btn {
-    width: 100%;
-    max-width: 200px;
+  .zone-label {
+    width: auto;
+  }
+  
+  .topology-nodes {
+    justify-content: center;
+  }
+  
+  .dialog-content {
+    min-width: 300px;
+    margin: 20px;
   }
 }
 </style>
