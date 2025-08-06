@@ -1,0 +1,175 @@
+/* 全局变量 */
+:root {
+  --color-background: #ffffff;
+  --color-background-rgb: 255, 255, 255;
+  --color-text: #333333;
+  --color-text-rgb: 51, 51, 51;
+  --color-primary: #409eff;
+  --color-primary-rgb: 64, 158, 255;
+  --color-secondary: #67c23a;
+  --color-secondary-rgb: 103, 194, 58;
+  --color-danger: #f56c6c;
+  --color-danger-rgb: 245, 108, 108;
+  --color-warning: #e6a23c;
+  --color-warning-rgb: 230, 162, 60;
+  --color-info: #909399;
+  --color-info-rgb: 144, 147, 153;
+  --color-success: #67c23a;
+  --color-success-rgb: 103, 194, 58;
+  
+  /* 计算得到的色调 */
+  --color-primary-light: rgba(var(--color-primary-rgb), 0.1);
+  --color-secondary-light: rgba(var(--color-secondary-rgb), 0.1);
+  
+  /* 边框样式 */
+  --border-radius: 4px;
+  --border-style: 1px solid #ebeef5;
+  --border-color: #ebeef5;
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* 字体 */
+  --font-family-base: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  --font-family-mono: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  
+  /* 过渡效果 */
+  --transition-base: all 0.3s ease;
+  
+  /* 布局 */
+  --header-height: 60px;
+  --footer-height: auto;
+  --header-background: white;
+  --header-background-rgb: 255, 255, 255;
+  --footer-background: white;
+  --footer-background-rgb: 255, 255, 255;
+
+  /* 间距 */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+}
+
+/* 暗色主题 */
+body.theme-dark {
+  --color-background: #000000;  /* 纯黑背景 */
+  --color-background-rgb: 0, 0, 0;
+  --color-text: #e0e0e0;
+  --color-text-rgb: 224, 224, 224;
+  --color-primary: #0a84ff;
+  --color-primary-rgb: 10, 132, 255;
+  --color-secondary: #30d158;
+  --color-secondary-rgb: 48, 209, 88;
+  --color-danger: #ff453a;
+  --color-danger-rgb: 255, 69, 58;
+  --color-warning: #ff9f0a;
+  --color-warning-rgb: 255, 159, 10;
+  --color-info: #64d2ff;
+  --color-info-rgb: 100, 210, 255;
+  --color-success: #30d158;
+  --color-success-rgb: 48, 209, 88;
+  --border-color: #333333;
+  --border-style: 1px solid #333333;
+  --header-background: #222222;  /* 深灰色顶栏 */
+  --header-background-rgb: 34, 34, 34;
+  --footer-background: #222222;  /* 深灰色底栏 */
+  --footer-background-rgb: 34, 34, 34;
+  }
+
+/* 重置样式 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  font-weight: normal;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--color-text);
+  background-color: var(--color-background);
+  transition: var(--transition-base);
+  font-family: var(--font-family-base);
+  font-size: 16px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 辅助类 */
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-secondary {
+  color: var(--color-secondary);
+}
+
+.text-danger {
+  color: var(--color-danger);
+}
+
+.text-warning {
+  color: var(--color-warning);
+}
+
+.text-info {
+  color: var(--color-info);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.bg-secondary {
+  background-color: var(--color-secondary);
+}
+
+.bg-danger {
+  background-color: var(--color-danger);
+}
+
+.bg-warning {
+  background-color: var(--color-warning);
+}
+
+.bg-info {
+  background-color: var(--color-info);
+}
+
+.bg-success {
+  background-color: var(--color-success);
+}
+
+.shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+/* 全局链接样式 */
+a {
+  text-decoration: none;
+  color: var(--color-primary);
+  transition: var(--transition-base);
+}
+
+a:hover {
+  opacity: 0.8;
+}
