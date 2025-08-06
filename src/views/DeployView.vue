@@ -221,7 +221,7 @@
                   v-for="node in topology.internal" 
                   :key="node.id"
                   :node="node"
-                  :zone="'internal'"
+                  :zone="node.zone"
                   @add-branch="addBranch"
                   @configure="configureNode"
                 />
@@ -241,7 +241,7 @@
                   v-for="node in topology.dmz" 
                   :key="node.id"
                   :node="node"
-                  :zone="'dmz'"
+                  :zone="node.zone"
                   @add-branch="addBranch"
                   @configure="configureNode"
                 />
@@ -261,7 +261,7 @@
                   v-for="node in topology.attack" 
                   :key="node.id"
                   :node="node"
-                  :zone="'attack'"
+                  :zone="node.zone"
                   @add-branch="addBranch"
                   @configure="configureNode"
                 />
@@ -311,8 +311,8 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, defineComponent } from 'vue'
+<script setup lang="ts">
+import { ref, computed, defineComponent, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 
 // 拓扑节点组件
@@ -323,20 +323,31 @@ const TopologyNode = defineComponent({
     zone: String
   },
   emits: ['add-branch', 'configure'],
+  setup(props) {
+    // 调试日志
+    console.log('TopologyNode props:', props)
+    return {}
+  },
   template: `
     <div class="topology-node-container">
       <div 
         class="topology-node"
-        :class="[
-          'zone-' + zone,
-          node.type,
-          { configured: node.configured }
-        ]"
+        :class="{
+          'zone-internal': zone === 'internal',
+          'zone-dmz': zone === 'dmz', 
+          'zone-attack': zone === 'attack',
+          'add': node.type === 'add',
+          'subnet': node.type === 'subnet',
+          'subnet-configured': node.type === 'subnet-configured',
+          'config': node.type === 'config',
+          'configured': node.type === 'configured' || node.configured
+        }"
         @click="handleNodeClick"
+        :title="'Zone: ' + zone + ', Type: ' + node.type"
       >
-        <div v-if="node.type === 'add'" class="add-icon">+</div>
+        <div v-if="node.type === 'add'">+</div>
         <div v-else-if="node.type === 'subnet'" class="node-text">配置子网网段</div>
-        <div v-else-if="node.type === 'subnet-configured'" class="node-text">{{ node.subnet }}</div>
+        <div v-else-if="node.type === 'subnet-configured'" class="node-text">{{ node.subnet || node.label }}</div>
         <div v-else-if="node.type === 'config'" class="node-text">具体配置</div>
         <div v-else-if="node.type === 'configured'" class="configured-node">
           <div class="node-type">{{ node.nodeType }}</div>
@@ -362,6 +373,7 @@ const TopologyNode = defineComponent({
   `,
   methods: {
     handleNodeClick() {
+      console.log('Node clicked:', this.node, 'Zone:', this.zone)
       if (this.node.type === 'add') {
         this.$emit('add-branch', this.node)
       } else if (this.node.type === 'subnet' || this.node.type === 'config') {
@@ -379,11 +391,15 @@ const AddNodeButton = defineComponent({
   emits: ['add'],
   template: `
     <div 
-      class="topology-node add-node-btn"
-      :class="'zone-' + zone"
+      class="topology-node add"
+      :class="{
+        'zone-internal': zone === 'internal',
+        'zone-dmz': zone === 'dmz',
+        'zone-attack': zone === 'attack'
+      }"
       @click="$emit('add', zone)"
     >
-      <div class="add-icon">+</div>
+      +
     </div>
   `
 })
@@ -450,30 +466,51 @@ const NodeConfigDialog = defineComponent({
     const nodeTypeOptions = [
       'Web服务器',
       '数据库服务器', 
-      '应用服务器',
-      '文件服务器',
-      '代理服务器'
+      'ftp服务器',
+      'Ad域控',
+      '攻击机kali'
     ]
     
     const systemOptions = {
-      'Web服务器': ['apache+php', 'nginx+php', 'tomcat+java', 'iis+asp'],
-      '数据库服务器': ['mysql', 'postgresql', 'mongodb', 'redis'],
-      '应用服务器': ['nodejs', 'python+django', 'java+spring', 'dotnet'],
-      '文件服务器': ['ftp', 'sftp', 'samba', 'nfs'],
-      '代理服务器': ['nginx', 'apache', 'haproxy', 'envoy']
+      'Web服务器': ['apache+php', 'apache+python', 'apache+java', 'nginx+php', 'nginx+python', 'iis+asp'],
+      '数据库服务器': ['MySQL', 'PostgreSQL', 'MongoDB', 'SQLServer', 'Oracle', 'Redis'],
+      'ftp服务器': ['vsftpd', 'proftpd', 'pureftpd', 'filezilla'],
+      'Ad域控': ['Windows Server 2019', 'Windows Server 2016', 'Windows Server 2012'],
+      '攻击机kali': ['kali', 'parrot', 'blackarch', 'pentoo']
+    }
+    
+    const imageOptions = {
+      'Web服务器': ['apache:php', 'nginx:php', 'tomcat:latest', 'httpd:latest'],
+      '数据库服务器': ['mysql:latest', 'postgres:latest', 'mongo:latest', 'redis:latest'],
+      'ftp服务器': ['fauria/vsftpd', 'stilliard/pure-ftpd', 'delfer/alpine-ftp-server'],
+      'Ad域控': ['mcr.microsoft.com/windows/servercore', 'microsoft/windowsservercore'],
+      '攻击机kali': ['kalilinux/kali-rolling', 'parrotsec/security', 'blackarchlinux/blackarch']
+    }
+    
+    const validateIP = (ip) => {
+      const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+      return ipRegex.test(ip)
     }
     
     const handleConfirm = () => {
-      if (nodeType.value && system.value && ip.value) {
-        emit('confirm', {
-          nodeType: nodeType.value,
-          system: system.value,
-          ip: ip.value,
-          image: image.value
-        })
-        resetForm()
-        emit('update:modelValue', false)
+      if (!nodeType.value || !system.value || !ip.value || !image.value) {
+        ElMessage.error('请填写所有必填项')
+        return
       }
+      
+      if (!validateIP(ip.value)) {
+        ElMessage.error('请输入有效的IP地址格式')
+        return
+      }
+      
+      emit('confirm', {
+        nodeType: nodeType.value,
+        system: system.value,
+        ip: ip.value,
+        image: image.value
+      })
+      resetForm()
+      emit('update:modelValue', false)
     }
     
     const handleCancel = () => {
@@ -488,13 +525,29 @@ const NodeConfigDialog = defineComponent({
       image.value = 'apache:php'
     }
     
+    // 当节点类型改变时，自动更新系统和镜像选项
+    const updateSystemOptions = () => {
+      const systems = systemOptions[nodeType.value]
+      if (systems && systems.length > 0) {
+        system.value = systems[0]
+      }
+      const images = imageOptions[nodeType.value]
+      if (images && images.length > 0) {
+        image.value = images[0]
+      }
+    }
+    
+    // 监听节点类型变化
+    watch(nodeType, updateSystemOptions)
+    
     return { 
       nodeType, 
       system, 
       ip, 
       image, 
       nodeTypeOptions, 
-      systemOptions, 
+      systemOptions,
+      imageOptions,
       handleConfirm, 
       handleCancel 
     }
@@ -531,10 +584,9 @@ const NodeConfigDialog = defineComponent({
         <div class="form-group">
           <label>镜像:</label>
           <select v-model="image" class="form-select">
-            <option value="apache:php">apache:php</option>
-            <option value="nginx:php">nginx:php</option>
-            <option value="mysql:latest">mysql:latest</option>
-            <option value="nodejs:alpine">nodejs:alpine</option>
+            <option v-for="img in imageOptions[nodeType]" :key="img" :value="img">
+              {{ img }}
+            </option>
           </select>
         </div>
         <div class="dialog-buttons">
@@ -563,10 +615,15 @@ const formData = ref({
 
 // 拓扑数据
 const topology = ref({
-  internal: [],  // 内网节点
-  dmz: [],       // DMZ节点
-  attack: []     // 攻击区节点
+  internal: [],    // 内网节点
+  dmz: [],         // DMZ节点
+  attack: []       // 攻击区节点
 })
+
+// 添加调试函数
+const logTopology = () => {
+  console.log('Current topology:', JSON.stringify(topology.value, null, 2))
+}
 
 // 对话框状态
 const showSubnetDialog = ref(false)
@@ -650,27 +707,40 @@ const addInitialNode = (zone) => {
   const nodeId = ++nodeIdCounter.value
   const newNode = {
     id: nodeId,
-    zone,
+    zone: zone, // 确保zone值正确传递
     type: 'add',
     configured: false,
     children: []
   }
   topology.value[zone].push(newNode)
+  console.log(`Added initial node to ${zone}:`, newNode)
+  logTopology()
 }
 
 const addBranch = (parentNode) => {
   const nodeId = ++nodeIdCounter.value
-  const newNode = {
-    id: nodeId,
-    zone: parentNode.zone,
-    type: 'subnet',
-    configured: false,
-    children: [],
-    parent: parentNode.id
+  
+  // 如果父节点是"加号"节点，转换为子网配置节点
+  if (parentNode.type === 'add') {
+    parentNode.type = 'subnet'
+    parentNode.label = '配置子网网段'
+    showSubnetDialog.value = true
+    currentSubnetConfig.value = parentNode
+  } else {
+    // 否则添加新的子节点
+    const newNode = {
+      id: nodeId,
+      zone: parentNode.zone,
+      type: 'subnet',
+      configured: false,
+      children: [],
+      parent: parentNode.id,
+      label: '配置子网网段'
+    }
+    parentNode.children.push(newNode)
+    showSubnetDialog.value = true
+    currentSubnetConfig.value = newNode
   }
-  parentNode.children.push(newNode)
-  showSubnetDialog.value = true
-  currentSubnetConfig.value = newNode
 }
 
 const configureNode = (node) => {
@@ -689,7 +759,7 @@ const configureNode = (node) => {
 const handleSubnetConfig = (subnetData) => {
   if (currentSubnetConfig.value) {
     currentSubnetConfig.value.subnet = subnetData.subnet
-    currentSubnetConfig.value.label = `配置子网网段`
+    currentSubnetConfig.value.label = subnetData.subnet
     currentSubnetConfig.value.type = 'subnet-configured'
     
     // 添加具体配置节点
@@ -703,6 +773,20 @@ const handleSubnetConfig = (subnetData) => {
       label: '具体配置'
     }
     currentSubnetConfig.value.children.push(configNode)
+    
+    // 添加新的"加号"节点用于继续扩展
+    const addNode = {
+      id: ++nodeIdCounter.value,
+      zone: currentSubnetConfig.value.zone,
+      type: 'add',
+      configured: false,
+      children: [],
+      parent: currentSubnetConfig.value.id
+    }
+    currentSubnetConfig.value.children.push(addNode)
+    
+    console.log('Configured subnet:', currentSubnetConfig.value)
+    logTopology()
   }
   showSubnetDialog.value = false
   currentSubnetConfig.value = null
@@ -714,11 +798,50 @@ const handleNodeConfig = (nodeData) => {
     currentConfigNode.value.configured = true
     currentConfigNode.value.type = 'configured'
     currentConfigNode.value.label = `${nodeData.nodeType}\n${nodeData.system}\n${nodeData.ip}`
+    
+    console.log('Configured node:', currentConfigNode.value)
+    
+    // 如果当前节点是父级节点的唯一子节点，且父级还有空间，添加新的扩展节点
+    const parentZone = topology.value[currentConfigNode.value.zone]
+    const parentNode = findNodeById(parentZone, currentConfigNode.value.parent)
+    
+    console.log('Found parent node:', parentNode)
+    
+    if (parentNode && parentNode.children.length < 5) { // 限制每个分支最多5个子节点
+      const addNode = {
+        id: ++nodeIdCounter.value,
+        zone: currentConfigNode.value.zone,
+        type: 'add',
+        configured: false,
+        children: [],
+        parent: currentConfigNode.value.parent
+      }
+      parentNode.children.push(addNode)
+      console.log('Added new add node:', addNode)
+    }
+    
+    logTopology()
   }
   showNodeDialog.value = false
   currentConfigNode.value = null
 }
+
+// 辅助函数：根据ID查找节点
+const findNodeById = (nodes, targetId) => {
+  for (const node of nodes) {
+    if (node.id === targetId) {
+      return node
+    }
+    if (node.children && node.children.length > 0) {
+      const found = findNodeById(node.children, targetId)
+      if (found) return found
+    }
+  }
+  return null
+}
 </script>
+
+
 
 <style scoped>
 /* 主容器 */
@@ -1191,7 +1314,7 @@ const handleNodeConfig = (nodeData) => {
 
 /* 拓扑节点 */
 .topology-node {
-  min-width: 120px;
+  min-width: 100px;
   min-height: 60px;
   border-radius: 8px;
   display: flex;
@@ -1204,6 +1327,7 @@ const handleNodeConfig = (nodeData) => {
   text-align: center;
   font-size: 0.9rem;
   line-height: 1.3;
+  flex-shrink: 0;
 }
 
 /* 区域颜色 */
@@ -1280,34 +1404,36 @@ const handleNodeConfig = (nodeData) => {
   border-radius: 4px;
 }
 
-/* 节点连接线 */
+/* 节点连接线 - 横向树布局 */
 .topology-node-container {
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row;
+  align-items: flex-start;
 }
 
 .node-connections {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: 20px;
+  flex-direction: row;
+  align-items: flex-start;
+  margin-left: 20px;
 }
 
 .connection-line {
-  width: 2px;
-  height: 30px;
+  width: 30px;
+  height: 2px;
   background: #d1d5db;
-  margin-bottom: 10px;
+  margin-right: 10px;
+  margin-top: 30px;
+  flex-shrink: 0;
 }
 
 .child-nodes {
   display: flex;
+  flex-direction: row;
   gap: 20px;
-  flex-wrap: wrap;
-  justify-content: center;
   align-items: flex-start;
+  flex-wrap: nowrap;
 }
 
 /* 对话框样式 */
