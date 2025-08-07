@@ -19,9 +19,14 @@
             <div class="step-label">网络拓扑</div>
           </div>
           <div class="progress-line" :class="{ completed: currentStep > 3 }"></div>
-          <div class="progress-step" :class="{ active: currentStep >= 4 }">
+          <div class="progress-step" :class="{ active: currentStep >= 4, completed: currentStep > 4 }">
             <div class="step-number">4</div>
             <div class="step-label">拓扑生成</div>
+          </div>
+          <div class="progress-line" :class="{ completed: currentStep > 4 }"></div>
+          <div class="progress-step" :class="{ active: currentStep >= 5 }">
+            <div class="step-number">5</div>
+            <div class="step-label">部署完成</div>
           </div>
         </div>
       </div>
@@ -108,15 +113,16 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Flag模板</label>
-                <input 
-                  v-model="formData.flagTemplate" 
-                  type="text" 
-                  class="form-input" 
-                  placeholder="flag{...}"
-                  readonly
-                />
-                <div class="form-hint">系统将自动生成随机Flag</div>
+                <label class="form-label">题目标签 *</label>
+                <select 
+                  v-model="formData.tagId" 
+                  class="form-select"
+                >
+                  <option value="" disabled>请选择题目标签</option>
+                  <option v-for="tag in tagOptions" :key="tag.tag_id" :value="tag.tag_id">
+                    {{ tag.tag }}
+                  </option>
+                </select>
               </div>
               <div class="form-group">
                 <label class="form-label">有效时间（秒）</label>
@@ -128,6 +134,20 @@
                   max="86400"
                 />
                 <div class="form-hint">{{ formatTime(formData.validTime) }}</div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label class="form-label">Flag *</label>
+                <input 
+                  v-model="formData.flag" 
+                  type="text" 
+                  class="form-input" 
+                  placeholder="请输入完整的flag，例如：flag{this_is_a_sample_flag}"
+                  maxlength="200"
+                />
+                <div class="form-hint">请输入完整的flag内容，包括格式</div>
               </div>
             </div>
           </div>
@@ -212,80 +232,198 @@
       <div class="form-card">
         <div class="form-header">
           <h3>🌐 网络拓扑配置</h3>
-          <p>配置您的CTF题目网络环境</p>
+          <p>配置您的CTF题目网络环境，每个区域可以设置一个子网并添加多个设备</p>
         </div>
         
-        <div class="topology-container">
-          <!-- 网络区域列表 -->
-          <div class="network-zones">
-            <!-- 内网区域 -->
-            <div class="zone-row">
-              <div class="zone-label">内网:</div>
-              <div class="topology-nodes">
-                <TopologyNode 
-                  v-for="node in topology.internal" 
-                  :key="node.id"
-                  :node="node"
-                  :zone="node.zone"
-                  @add-branch="addBranch"
-                  @configure="configureNode"
-                />
-                <AddNodeButton 
-                  v-if="topology.internal.length === 0"
-                  zone="internal"
-                  @add="addInitialNode"
-                />
+        <div class="network-config-container">
+          <!-- 内网区域 -->
+          <div class="network-zone-config">
+            <div class="zone-header">
+              <div class="zone-title">
+                <div class="zone-icon internal">🏠</div>
+                <span class="zone-name">内网区域</span>
               </div>
             </div>
             
-            <!-- DMZ区域 -->
-            <div class="zone-row">
-              <div class="zone-label">DMZ:</div>
-              <div class="topology-nodes">
-                <TopologyNode 
-                  v-for="node in topology.dmz" 
-                  :key="node.id"
-                  :node="node"
-                  :zone="node.zone"
-                  @add-branch="addBranch"
-                  @configure="configureNode"
-                />
-                <AddNodeButton 
-                  v-if="topology.dmz.length === 0"
-                  zone="dmz"
-                  @add="addInitialNode"
+            <div class="zone-content">
+              <!-- 子网配置 -->
+              <div class="subnet-config">
+                <label class="subnet-label">子网地址段:</label>
+                <input 
+                  v-model="networkConfig.internal.subnet" 
+                  type="text" 
+                  class="subnet-input"
+                  placeholder="例如: 192.168.1.0/24"
                 />
               </div>
-            </div>
-            
-            <!-- 攻击区域 -->
-            <div class="zone-row">
-              <div class="zone-label">攻击区:</div>
-              <div class="topology-nodes">
-                <TopologyNode 
-                  v-for="node in topology.attack" 
-                  :key="node.id"
-                  :node="node"
-                  :zone="node.zone"
-                  @add-branch="addBranch"
-                  @configure="configureNode"
-                />
-                <AddNodeButton 
-                  v-if="topology.attack.length === 0"
-                  zone="attack"
-                  @add="addInitialNode"
-                />
+              
+              <!-- 设备列表 -->
+              <div class="devices-section">
+                <div class="devices-header">
+                  <span class="devices-title">设备列表 ({{ networkConfig.internal.devices.length }})</span>
+                  <button 
+                    class="add-device-btn" 
+                    @click="addDevice('internal')"
+                    :disabled="!networkConfig.internal.subnet.trim()"
+                  >
+                    <span class="add-icon">+</span>
+                    添加设备
+                  </button>
+                </div>
+                
+                <div class="devices-list">
+                  <div 
+                    v-for="(device, index) in networkConfig.internal.devices" 
+                    :key="device.id"
+                    class="device-item"
+                  >
+                    <div class="device-info">
+                      <div class="device-type">{{ device.type || '未配置' }}</div>
+                      <div class="device-details">
+                        <span class="device-ip">{{ device.ip || '未设置IP' }}</span>
+                        <span class="device-system">{{ device.system || '未选择系统' }}</span>
+                      </div>
+                    </div>
+                    <div class="device-actions">
+                      <button class="edit-device-btn" @click="editDevice('internal', index)">编辑</button>
+                      <button class="delete-device-btn" @click="deleteDevice('internal', index)">删除</button>
+                    </div>
+                  </div>
+                  
+                  <div v-if="networkConfig.internal.devices.length === 0" class="no-devices">
+                    <div class="no-devices-icon">📱</div>
+                    <p>暂无设备，点击"添加设备"开始配置</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        
-        <!-- 调试信息 -->
-        <div style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 12px; color: #666;">
-          <strong>调试信息:</strong><br>
-          canProceed: {{ canProceed }}<br>
-          已配置节点数: {{ getAllConfiguredNodes().length }}<br>
-          <button @click="logTopology" style="font-size: 11px; margin: 5px 0; padding: 2px 8px;">打印拓扑到控制台</button>
+
+          <!-- DMZ区域 -->
+          <div class="network-zone-config">
+            <div class="zone-header">
+              <div class="zone-title">
+                <div class="zone-icon dmz">🌐</div>
+                <span class="zone-name">DMZ区域</span>
+              </div>
+            </div>
+            
+            <div class="zone-content">
+              <!-- 子网配置 -->
+              <div class="subnet-config">
+                <label class="subnet-label">子网地址段:</label>
+                <input 
+                  v-model="networkConfig.dmz.subnet" 
+                  type="text" 
+                  class="subnet-input"
+                  placeholder="例如: 10.0.1.0/24"
+                />
+              </div>
+              
+              <!-- 设备列表 -->
+              <div class="devices-section">
+                <div class="devices-header">
+                  <span class="devices-title">设备列表 ({{ networkConfig.dmz.devices.length }})</span>
+                  <button 
+                    class="add-device-btn" 
+                    @click="addDevice('dmz')"
+                    :disabled="!networkConfig.dmz.subnet.trim()"
+                  >
+                    <span class="add-icon">+</span>
+                    添加设备
+                  </button>
+                </div>
+                
+                <div class="devices-list">
+                  <div 
+                    v-for="(device, index) in networkConfig.dmz.devices" 
+                    :key="device.id"
+                    class="device-item"
+                  >
+                    <div class="device-info">
+                      <div class="device-type">{{ device.type || '未配置' }}</div>
+                      <div class="device-details">
+                        <span class="device-ip">{{ device.ip || '未设置IP' }}</span>
+                        <span class="device-system">{{ device.system || '未选择系统' }}</span>
+                      </div>
+                    </div>
+                    <div class="device-actions">
+                      <button class="edit-device-btn" @click="editDevice('dmz', index)">编辑</button>
+                      <button class="delete-device-btn" @click="deleteDevice('dmz', index)">删除</button>
+                    </div>
+                  </div>
+                  
+                  <div v-if="networkConfig.dmz.devices.length === 0" class="no-devices">
+                    <div class="no-devices-icon">📱</div>
+                    <p>暂无设备，点击"添加设备"开始配置</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 攻击区域 -->
+          <div class="network-zone-config">
+            <div class="zone-header">
+              <div class="zone-title">
+                <div class="zone-icon attack">⚡</div>
+                <span class="zone-name">攻击区域</span>
+              </div>
+            </div>
+            
+            <div class="zone-content">
+              <!-- 子网配置 -->
+              <div class="subnet-config">
+                <label class="subnet-label">子网地址段:</label>
+                <input 
+                  v-model="networkConfig.attack.subnet" 
+                  type="text" 
+                  class="subnet-input"
+                  placeholder="例如: 172.16.1.0/24"
+                />
+              </div>
+              
+              <!-- 设备列表 -->
+              <div class="devices-section">
+                <div class="devices-header">
+                  <span class="devices-title">设备列表 ({{ networkConfig.attack.devices.length }})</span>
+                  <button 
+                    class="add-device-btn" 
+                    @click="addDevice('attack')"
+                    :disabled="!networkConfig.attack.subnet.trim()"
+                  >
+                    <span class="add-icon">+</span>
+                    添加设备
+                  </button>
+                </div>
+                
+                <div class="devices-list">
+                  <div 
+                    v-for="(device, index) in networkConfig.attack.devices" 
+                    :key="device.id"
+                    class="device-item"
+                  >
+                    <div class="device-info">
+                      <div class="device-type">{{ device.type || '未配置' }}</div>
+                      <div class="device-details">
+                        <span class="device-ip">{{ device.ip || '未设置IP' }}</span>
+                        <span class="device-system">{{ device.system || '未选择系统' }}</span>
+                      </div>
+                    </div>
+                    <div class="device-actions">
+                      <button class="edit-device-btn" @click="editDevice('attack', index)">编辑</button>
+                      <button class="delete-device-btn" @click="deleteDevice('attack', index)">删除</button>
+                    </div>
+                  </div>
+                  
+                  <div v-if="networkConfig.attack.devices.length === 0" class="no-devices">
+                    <div class="no-devices-icon">📱</div>
+                    <p>暂无设备，点击"添加设备"开始配置</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
         <!-- 导航按钮 -->
@@ -299,7 +437,7 @@
           <button 
             class="nav-btn next-btn" 
             @click="nextStep"
-            :disabled="!canProceed"
+            :disabled="!canProceedStep3"
           >
             下一步 →
           </button>
@@ -331,9 +469,9 @@
               <div class="summary-item">
                 <div class="summary-label">网络分区:</div>
                 <div class="summary-value">
-                  <span v-for="(nodes, zone) in topology" :key="zone" class="zone-tag">
+                  <span v-for="(config, zone) in networkConfig" :key="zone" v-if="config.subnet && config.devices.length > 0" class="zone-tag">
                     {{ getZoneName(zone) }}
-                    <span class="node-count">({{ getConfiguredNodeCount(nodes) }}个节点)</span>
+                    <span class="node-count">({{ config.devices.length }}个设备)</span>
                   </span>
                 </div>
               </div>
@@ -433,10 +571,83 @@
           </button>
           <button 
             v-if="generationState === 'completed'"
+            class="nav-btn next-btn" 
+            @click="nextStep"
+          >
+            下一步 →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 第五步：部署完成 -->
+    <div v-if="currentStep === 5" class="step-content">
+      <div class="form-card">
+        <div class="form-header">
+          <h2>🎉 部署完成</h2>
+          <p>CTF题目部署已完成，可以进行后续操作</p>
+        </div>
+        
+        <div class="form-body">
+          <div class="completion-content">
+            <div class="completion-icon">✅</div>
+            <h3>恭喜！题目部署成功</h3>
+            <p class="completion-description">
+              您的CTF题目已成功创建并完成所有配置步骤。
+            </p>
+            
+            <!-- 部署摘要信息 -->
+            <div class="deployment-summary">
+              <h4>📋 部署摘要</h4>
+              <div class="summary-grid">
+                <div class="summary-item">
+                  <div class="summary-label">题目ID:</div>
+                  <div class="summary-value">{{ questionId || '未设置' }}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">部署ID:</div>
+                  <div class="summary-value">{{ deployId || '未设置' }}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">题目名称:</div>
+                  <div class="summary-value">{{ formData.title }}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">选择标签:</div>
+                  <div class="summary-value">{{ getSelectedTagName() }}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">难度等级:</div>
+                  <div class="summary-value">{{ getDifficultyText(formData.difficulty) }}</div>
+                </div>
+                <div class="summary-item">
+                  <div class="summary-label">有效时间:</div>
+                  <div class="summary-value">{{ formatTime(formData.validTime) }}</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 占位内容区域 -->
+            <div class="placeholder-content">
+              <h4>⏳ 待完善功能</h4>
+              <p class="placeholder-text">此区域将在后续版本中添加更多功能...</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 导航按钮 -->
+        <div class="card-footer">
+          <button 
+            class="nav-btn prev-btn" 
+            @click="prevStep"
+          >
+            ← 上一步
+          </button>
+          <button 
             class="nav-btn submit-btn" 
             @click="finalSubmit"
           >
-            完成部署 🎉
+            完成 🎉
           </button>
         </div>
       </div>
@@ -448,7 +659,14 @@
       @confirm="handleSubnetConfig"
     />
     
-    <!-- 节点配置弹窗 -->
+    <!-- 设备配置弹窗 -->
+    <DeviceConfigDialog 
+      v-model="showDeviceDialog"
+      :device="currentEditingDevice.device"
+      @confirm="handleDeviceConfig"
+    />
+    
+    <!-- 节点配置弹窗（旧版本，保留兼容） -->
     <NodeConfigDialog 
       v-model="showNodeDialog"
       :node="currentConfigNode"
@@ -459,9 +677,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineComponent, watch } from 'vue'
+import { ref, computed, defineComponent, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { createQuestion, type CreateQuestionRequest } from '@/api/question'
+import { getAllTags, type Tag } from '@/api/tag'
 import { 
   inputScenario, 
   inputDevices,
@@ -618,7 +837,212 @@ const SubnetConfigDialog = defineComponent({
   `
 })
 
-// 节点配置对话框组件
+// 美化的设备配置对话框组件
+const DeviceConfigDialog = defineComponent({
+  props: {
+    modelValue: Boolean,
+    device: Object
+  },
+  emits: ['update:modelValue', 'confirm'],
+  setup(props, { emit }) {
+    const deviceType = ref('')
+    const system = ref('')
+    const ip = ref('')
+    const image = ref('')
+    
+    // 设备类型选项
+    const deviceTypeOptions = [
+      'Web服务器', '数据库服务器', '应用服务器', 
+      '邮件服务器', 'DNS服务器', '代理服务器',
+      '防火墙', '路由器', '交换机',
+      '攻击机', '靶机', '跳板机'
+    ]
+    
+    // 系统选项（根据设备类型动态变化）
+    const systemOptions = {
+      'Web服务器': ['Apache+PHP', 'Nginx+PHP', 'IIS+ASP.NET', 'Tomcat+Java', 'Apache+Python'],
+      '数据库服务器': ['MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Oracle', 'SQL Server'],
+      '应用服务器': ['Tomcat', 'JBoss', 'WebLogic', 'WebSphere', 'Node.js'],
+      '邮件服务器': ['Postfix', 'Sendmail', 'Exchange', 'Dovecot'],
+      'DNS服务器': ['BIND', 'PowerDNS', 'Unbound', 'dnsmasq'],
+      '代理服务器': ['Squid', 'Nginx Proxy', 'HAProxy', 'Apache Proxy'],
+      '防火墙': ['iptables', 'pfSense', 'Cisco ASA', 'Fortinet'],
+      '路由器': ['Cisco IOS', 'Quagga', 'BIRD', 'OpenWrt'],
+      '交换机': ['Cisco Catalyst', 'Open vSwitch', 'Linux Bridge'],
+      '攻击机': ['Kali Linux', 'ParrotOS', 'BlackArch', 'Pentoo'],
+      '靶机': ['Metasploitable', 'DVWA', 'WebGoat', 'VulnHub'],
+      '跳板机': ['Ubuntu', 'CentOS', 'Windows Server', 'OpenSSH']
+    }
+    
+    // 镜像选项（根据系统动态变化）
+    const imageOptions = {
+      'Apache+PHP': ['httpd:2.4-php', 'php:7.4-apache', 'php:8.0-apache'],
+      'Nginx+PHP': ['nginx:alpine-php', 'php:7.4-fpm-nginx', 'php:8.0-fpm-nginx'],
+      'IIS+ASP.NET': ['mcr.microsoft.com/dotnet/framework/aspnet:4.8', 'mcr.microsoft.com/dotnet/aspnet:5.0'],
+      'MySQL': ['mysql:8.0', 'mysql:5.7', 'percona:8.0'],
+      'PostgreSQL': ['postgres:13', 'postgres:12', 'postgis/postgis:13-3.1'],
+      'MongoDB': ['mongo:4.4', 'mongo:5.0', 'mongo:latest'],
+      'Redis': ['redis:6.2', 'redis:alpine', 'redis:latest'],
+      'Kali Linux': ['kalilinux/kali-rolling', 'kalilinux/kali-linux-docker'],
+      'Ubuntu': ['ubuntu:20.04', 'ubuntu:18.04', 'ubuntu:latest'],
+      'CentOS': ['centos:8', 'centos:7', 'rockylinux:8'],
+      'Windows Server': ['mcr.microsoft.com/windows/servercore:ltsc2019', 'mcr.microsoft.com/windows/server:ltsc2022']
+    }
+    
+    // 监听device prop变化，更新表单数据
+    watch(() => props.device, (newDevice) => {
+      if (newDevice) {
+        deviceType.value = newDevice.type || ''
+        system.value = newDevice.system || ''
+        ip.value = newDevice.ip || ''
+        image.value = newDevice.image || ''
+      }
+    }, { immediate: true })
+    
+    // 监听设备类型变化，自动更新系统和镜像
+    watch(deviceType, (newType) => {
+      if (newType && systemOptions[newType]) {
+        system.value = systemOptions[newType][0] || ''
+      }
+    })
+    
+    watch(system, (newSystem) => {
+      if (newSystem && imageOptions[newSystem]) {
+        image.value = imageOptions[newSystem][0] || ''
+      }
+    })
+    
+    const validateIP = (ip) => {
+      const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+      return ipRegex.test(ip)
+    }
+    
+    const handleConfirm = () => {
+      if (!deviceType.value || !system.value || !ip.value || !image.value) {
+        ElMessage.error('请填写所有必填项')
+        return
+      }
+      
+      if (!validateIP(ip.value)) {
+        ElMessage.error('请输入有效的IP地址格式')
+        return
+      }
+      
+      emit('confirm', {
+        type: deviceType.value,
+        system: system.value,
+        ip: ip.value,
+        image: image.value
+      })
+      
+      resetForm()
+    }
+    
+    const handleCancel = () => {
+      resetForm()
+      emit('update:modelValue', false)
+    }
+    
+    const resetForm = () => {
+      deviceType.value = ''
+      system.value = ''
+      ip.value = ''
+      image.value = ''
+    }
+    
+    return {
+      deviceType,
+      system,
+      ip,
+      image,
+      deviceTypeOptions,
+      systemOptions,
+      imageOptions,
+      handleConfirm,
+      handleCancel
+    }
+  },
+  template: `
+    <div v-if="modelValue" class="dialog-overlay" @click.self="handleCancel">
+      <div class="device-dialog">
+        <div class="dialog-header">
+          <h3>⚙️ 设备配置</h3>
+          <button class="close-btn" @click="handleCancel">×</button>
+        </div>
+        
+        <div class="dialog-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">设备类型 <span class="required">*</span></label>
+              <select v-model="deviceType" class="form-select">
+                <option value="">请选择设备类型</option>
+                <option v-for="type in deviceTypeOptions" :key="type" :value="type">
+                  {{ type }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">系统/服务 <span class="required">*</span></label>
+              <select v-model="system" class="form-select" :disabled="!deviceType">
+                <option value="">请选择系统</option>
+                <option v-for="sys in systemOptions[deviceType] || []" :key="sys" :value="sys">
+                  {{ sys }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">IP地址 <span class="required">*</span></label>
+              <input 
+                v-model="ip"
+                type="text" 
+                class="form-input"
+                placeholder="例如: 192.168.1.10"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Docker镜像 <span class="required">*</span></label>
+              <select v-model="image" class="form-select" :disabled="!system">
+                <option value="">请选择镜像</option>
+                <option v-for="img in imageOptions[system] || []" :key="img" :value="img">
+                  {{ img }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-tips">
+            <div class="tip-item">
+              <span class="tip-icon">💡</span>
+              <span class="tip-text">系统选项会根据设备类型自动筛选</span>
+            </div>
+            <div class="tip-item">
+              <span class="tip-icon">🐳</span>
+              <span class="tip-text">Docker镜像会根据系统类型自动匹配</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="dialog-footer">
+          <button class="btn btn-secondary" @click="handleCancel">
+            <span class="btn-icon">❌</span>
+            取消
+          </button>
+          <button class="btn btn-primary" @click="handleConfirm">
+            <span class="btn-icon">✅</span>
+            确定
+          </button>
+        </div>
+      </div>
+    </div>
+  `
+})
+
+// 节点配置对话框组件(旧版本)
 const NodeConfigDialog = defineComponent({
   props: {
     modelValue: Boolean,
@@ -787,18 +1211,80 @@ const formData = ref({
   title: '',
   description: '',
   enabled: true,
-  flagTemplate: 'flag{...}',
+  flag: '',
+  tagId: '',
   validTime: 3600,
   difficulty: 3,
   maxAttempts: 20,
   requirements: ''
 })
 
-// 拓扑数据
+// 新的网络配置数据结构
+const networkConfig = ref({
+  internal: {
+    subnet: '',    // 子网地址段
+    devices: []    // 设备列表
+  },
+  dmz: {
+    subnet: '',
+    devices: []
+  },
+  attack: {
+    subnet: '',
+    devices: []
+  }
+})
+
+// 设备配置弹窗相关
+const showDeviceDialog = ref(false)
+const currentEditingDevice = ref({
+  zone: '',
+  index: -1,
+  device: null
+})
+
+// 旧拓扑数据(保留向后兼容)
 const topology = ref({
   internal: [],    // 内网节点
   dmz: [],         // DMZ节点
   attack: []       // 攻击区节点
+})
+
+// 标签选项数据
+const tagOptions = ref<Tag[]>([])
+
+// 获取标签列表
+const fetchTags = async () => {
+  try {
+    const response = await getAllTags()
+    if (response && response.code === 200 && response.data) {
+      tagOptions.value = response.data
+    } else {
+      // 如果API失败，使用默认标签
+      tagOptions.value = [
+        { tag_id: 1, tag: '电子数据取证' },
+        { tag_id: 2, tag: '渗透测试' },
+        { tag_id: 3, tag: '系统安全' },
+        { tag_id: 4, tag: '密码技术与应用' },
+        { tag_id: 5, tag: '恶意软件分析' }
+      ]
+    }
+  } catch (error) {
+    console.error('获取标签列表失败:', error)
+    // 使用默认标签作为后备
+    tagOptions.value = [
+      { tag_id: 1, tag: '电子数据取证' },
+      { tag_id: 2, tag: '渗透测试' },
+      { tag_id: 3, tag: '系统安全' },
+      { tag_id: 4, tag: '密码技术与应用' },
+      { tag_id: 5, tag: '恶意软件分析' }
+    ]
+  }
+}
+
+// 页面加载时获取标签列表
+onMounted(() => {
+  fetchTags()
 })
 
 // 添加调试函数
@@ -847,6 +1333,8 @@ const canProceed = computed(() => {
   if (currentStep.value === 1) {
     return formData.value.title.trim() !== '' && 
            formData.value.description.trim() !== '' &&
+           formData.value.flag.trim() !== '' &&
+           formData.value.tagId !== '' &&
            formData.value.difficulty > 0
   }
   if (currentStep.value === 2) {
@@ -869,7 +1357,7 @@ const canSubmit = computed(() => {
 
 // 方法
 const nextStep = async () => {
-  if (!canProceed.value || currentStep.value > 4) {
+  if (!canProceed.value || currentStep.value > 5) {
     return
   }
 
@@ -882,8 +1370,11 @@ const nextStep = async () => {
       // 第二步完成时，提交scenario数据
       await submitScenarioStep()
     } else if (currentStep.value === 3) {
-      // 第三步完成时，收集设备配置数据但不发送
-      await collectDeviceConfigStep()
+      // 第三步完成时，收集设备配置数据并转换为旧格式以保持兼容
+      await collectDeviceConfigStepNew()
+    } else if (currentStep.value === 4) {
+      // 第四步完成时，直接进入第五步
+      // 无需额外处理，直接跳转
     }
 
     currentStep.value++
@@ -900,9 +1391,9 @@ const createQuestionStep = async () => {
   const questionData: CreateQuestionRequest = {
     title: formData.value.title,
     introduction: formData.value.description,
-    tag_id: 1, // 默认标签ID，可以根据需要修改
+    tag_id: formData.value.tagId,
     is_active: formData.value.enabled,
-    flag_prefix: formData.value.flagTemplate,
+    flag_prefix: formData.value.flag,
     topology: null, // 初始时拓扑图为空，后续第四步会更新
     valid_time: formData.value.validTime,
     star: formData.value.difficulty
@@ -1048,6 +1539,163 @@ const formatTime = (seconds) => {
   } else {
     return `${Math.floor(seconds / 86400)}天`
   }
+}
+
+// 获取选中标签的名称
+const getSelectedTagName = () => {
+  const selectedTag = tagOptions.value.find(tag => tag.tag_id === formData.value.tagId)
+  return selectedTag ? selectedTag.tag : '未选择'
+}
+
+// 新的设备管理函数
+const addDevice = (zone) => {
+  currentEditingDevice.value = {
+    zone: zone,
+    index: -1,
+    device: {
+      id: Date.now(),
+      type: '',
+      system: '',
+      ip: '',
+      image: ''
+    }
+  }
+  showDeviceDialog.value = true
+}
+
+const editDevice = (zone, index) => {
+  currentEditingDevice.value = {
+    zone: zone,
+    index: index,
+    device: { ...networkConfig.value[zone].devices[index] }
+  }
+  showDeviceDialog.value = true
+}
+
+const deleteDevice = (zone, index) => {
+  networkConfig.value[zone].devices.splice(index, 1)
+  ElMessage.success('设备已删除')
+}
+
+const handleDeviceConfig = (deviceData) => {
+  const { zone, index } = currentEditingDevice.value
+  
+  if (index === -1) {
+    // 添加新设备
+    const newDevice = {
+      id: Date.now(),
+      ...deviceData
+    }
+    networkConfig.value[zone].devices.push(newDevice)
+    ElMessage.success('设备添加成功')
+  } else {
+    // 编辑现有设备
+    networkConfig.value[zone].devices[index] = {
+      ...networkConfig.value[zone].devices[index],
+      ...deviceData
+    }
+    ElMessage.success('设备更新成功')
+  }
+  
+  showDeviceDialog.value = false
+}
+
+// 第三步验证函数
+const canProceedStep3 = computed(() => {
+  // 至少需要有一个区域配置了子网和设备
+  const zones = ['internal', 'dmz', 'attack']
+  return zones.some(zone => {
+    const config = networkConfig.value[zone]
+    return config.subnet.trim() !== '' && config.devices.length > 0
+  })
+})
+
+// 新的设备配置收集函数
+const collectDeviceConfigStepNew = async () => {
+  try {
+    // 将新的网络配置转换为旧的拓扑格式以保持兼容性
+    const convertedTopology = convertNetworkConfigToTopology()
+    
+    // 更新旧的topology数据结构以保持兼容
+    topology.value = convertedTopology
+    
+    // 转换为API需要的格式
+    const devices = convertTopologyToDevices()
+    
+    if (devices.length === 0) {
+      ElMessage.warning('请至少配置一个设备')
+      throw new Error('No devices configured')
+    }
+
+    console.log('收集的设备配置数据:', devices)
+    
+    // 调用设备配置API
+    const requestData: InputDevicesRequest = {
+      deploy_id: deployId.value!,
+      devices: devices
+    }
+
+    console.log('发送设备配置请求:', requestData)
+    const response = await inputDevices(requestData)
+    console.log('设备配置响应:', response)
+
+    if (response && response.code === 200) {
+      deviceConfigData.value = devices
+      ElMessage.success('设备配置提交成功')
+    } else {
+      const errorMsg = response?.message || '设备配置提交失败'
+      ElMessage.error(errorMsg)
+      throw new Error(errorMsg)
+    }
+
+  } catch (error) {
+    console.error('设备配置步骤失败:', error)
+    throw error
+  }
+}
+
+// 将新的网络配置转换为旧的拓扑格式
+const convertNetworkConfigToTopology = () => {
+  const convertedTopology = {
+    internal: [],
+    dmz: [],
+    attack: []
+  }
+
+  // 遍历每个网络区域
+  Object.keys(networkConfig.value).forEach(zone => {
+    const config = networkConfig.value[zone]
+    
+    if (config.subnet.trim() && config.devices.length > 0) {
+      // 为每个区域创建一个子网节点
+      const subnetNode = {
+        id: `${zone}-subnet`,
+        type: 'subnet-configured',
+        subnet: config.subnet,
+        zone: zone,
+        children: []
+      }
+      
+      // 将设备作为子节点添加到子网下
+      config.devices.forEach((device, index) => {
+        const deviceNode = {
+          id: `${zone}-device-${index}`,
+          type: 'configured',
+          nodeType: device.type,
+          system: device.system,
+          ip: device.ip,
+          image: device.image,
+          zone: zone,
+          configured: true
+        }
+        subnetNode.children.push(deviceNode)
+      })
+      
+      convertedTopology[zone].push(subnetNode)
+    }
+  })
+
+  return convertedTopology
 }
 
 // 第四步相关辅助函数
@@ -1755,7 +2403,8 @@ const findNodeById = (nodes, targetId) => {
 }
 
 .form-input,
-.form-textarea {
+.form-textarea,
+.form-select {
   padding: 8px 12px;
   border: 2px solid #e5e7eb;
   border-radius: 6px;
@@ -1766,7 +2415,8 @@ const findNodeById = (nodes, targetId) => {
 }
 
 .form-input:focus,
-.form-textarea:focus {
+.form-textarea:focus,
+.form-select:focus {
   outline: none;
   border-color: #3b82f6;
   background: white;
@@ -2671,5 +3321,507 @@ const findNodeById = (nodes, targetId) => {
 .retry-btn:hover {
   background: #b91c1c;
   transform: translateY(-1px);
+}
+
+/* 第五步：部署完成样式 */
+.completion-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.completion-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.completion-content h3 {
+  color: #059669;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+}
+
+.completion-description {
+  color: #64748b;
+  font-size: 1rem;
+  margin: 0 0 30px 0;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.deployment-summary {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 30px 0;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.deployment-summary h4 {
+  margin: 0 0 16px 0;
+  color: #334155;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.placeholder-content {
+  background: #eff6ff;
+  border: 2px dashed #bfdbfe;
+  border-radius: 12px;
+  padding: 30px;
+  margin: 30px 0;
+}
+
+.placeholder-content h4 {
+  color: #1e40af;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.placeholder-text {
+  color: #64748b;
+  font-size: 1rem;
+  margin: 0;
+  font-style: italic;
+}
+
+/* 第三步新设计的样式 */
+.network-config-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 20px 0;
+}
+
+.network-zone-config {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.network-zone-config:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.zone-header {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.zone-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.zone-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.zone-icon.internal {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+}
+
+.zone-icon.dmz {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.zone-icon.attack {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.zone-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.zone-content {
+  padding: 20px;
+}
+
+.subnet-config {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.subnet-label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+.subnet-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.subnet-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.devices-section {
+  margin-top: 20px;
+}
+
+.devices-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.devices-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.add-device-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-device-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.add-device-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.add-icon {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.devices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.device-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #ffffff;
+  border: 2px solid #f1f5f9;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.device-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.device-info {
+  flex: 1;
+}
+
+.device-type {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.device-details {
+  display: flex;
+  gap: 16px;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.device-ip {
+  font-family: 'Monaco', 'Consolas', monospace;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.device-system {
+  background: #eff6ff;
+  color: #1e40af;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.device-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-device-btn, .delete-device-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-device-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.edit-device-btn:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.delete-device-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.delete-device-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+.no-devices {
+  text-align: center;
+  padding: 32px 16px;
+  color: #9ca3af;
+}
+
+.no-devices-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.no-devices p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* 美化的设备配置弹窗样式 */
+.device-dialog {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 650px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: dialogSlideIn 0.3s ease-out;
+}
+
+@keyframes dialogSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.dialog-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dialog-body {
+  padding: 24px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.form-select, .form-input {
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.form-select:focus, .form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-select:disabled, .form-input:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.form-tips {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.tip-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tip-item:last-child {
+  margin-bottom: 0;
+}
+
+.tip-icon {
+  font-size: 1rem;
+}
+
+.tip-text {
+  font-size: 0.875rem;
+  color: #0c4a6e;
+}
+
+.dialog-footer {
+  background: #f8fafc;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-icon {
+  font-size: 0.8rem;
 }
 </style>
