@@ -1,1586 +1,492 @@
 <template>
   <div class="deploy-container">
     <!-- 固定进度条 -->
-    <div class="progress-header">
-      <div class="progress-container">
-        <div class="progress-bar">
-          <div class="progress-step" :class="{ active: currentStep >= 1, completed: currentStep > 1 }">
-            <div class="step-number">1</div>
-            <div class="step-label">题目配置</div>
+    <div class="progress-bar">
+      <div class="progress-steps">
+        <div
+          v-for="(step, index) in steps"
+          :key="index"
+          class="progress-step"
+          :class="{
+            'active': currentStep === index + 1,
+            'completed': currentStep > index + 1
+          }"
+        >
+          <div class="step-circle">
+            <i v-if="currentStep > index + 1" class="check-icon">✓</i>
+            <span v-else>{{ index + 1 }}</span>
           </div>
-          <div class="progress-line" :class="{ completed: currentStep > 1 }"></div>
-          <div class="progress-step" :class="{ active: currentStep >= 2, completed: currentStep > 2 }">
-            <div class="step-number">2</div>
-            <div class="step-label">需求输入</div>
-          </div>
-          <div class="progress-line" :class="{ completed: currentStep > 2 }"></div>
-          <div class="progress-step" :class="{ active: currentStep >= 3, completed: currentStep > 3 }">
-            <div class="step-number">3</div>
-            <div class="step-label">网络拓扑</div>
-          </div>
-          <div class="progress-line" :class="{ completed: currentStep > 3 }"></div>
-          <div class="progress-step" :class="{ active: currentStep >= 4 }">
-            <div class="step-number">4</div>
-            <div class="step-label">拓扑生成</div>
-          </div>
+          <span class="step-label">{{ step }}</span>
         </div>
       </div>
     </div>
 
-    <!-- 主要内容区域 -->
-    <div class="main-content">
-      <!-- 第一步：题目配置 -->
+    <!-- 内容区域 -->
+    <div class="content-area">
+      <!-- 第一步：出题界面 -->
       <div v-if="currentStep === 1" class="step-content">
-        <div class="form-card">
-          <div class="form-header">
-            <h2>📝 题目配置</h2>
-            <p>设置CTF题目的基本信息和参数</p>
+        <h2 class="step-title">题目信息设置</h2>
+
+        <div class="form-container">
+          <div class="form-group">
+            <label class="form-label">题目标题 <span class="required">*</span></label>
+            <input
+              v-model="questionForm.title"
+              type="text"
+              class="form-input"
+              placeholder="请输入题目标题"
+            />
           </div>
-          
-          <div class="form-body">
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">题目标题 *</label>
-                <input 
-                  v-model="formData.title" 
-                  type="text" 
-                  class="form-input" 
-                  placeholder="请输入题目标题"
-                  maxlength="100"
-                />
-              </div>
-              <div class="form-group">
-                <label class="form-label">难度等级 *</label>
-                <div class="difficulty-selector">
-                  <div 
-                    v-for="star in 5" 
-                    :key="star"
-                    class="star"
-                    :class="{ active: star <= formData.difficulty }"
-                    @click="formData.difficulty = star"
-                  >
-                    ★
-                  </div>
-                  <span class="difficulty-text">{{ getDifficultyText(formData.difficulty) }}</span>
-                </div>
+
+          <div class="form-group">
+            <label class="form-label">题目简介 <span class="required">*</span></label>
+            <textarea
+              v-model="questionForm.description"
+              class="form-textarea"
+              placeholder="请输入题目简介"
+              rows="4"
+            ></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half-width">
+              <label class="form-label">是否启用</label>
+              <div class="radio-group">
+                <label class="radio-item">
+                  <input
+                    v-model="questionForm.enabled"
+                    type="radio"
+                    :value="true"
+                  />
+                  <span class="radio-custom"></span>
+                  是
+                </label>
+                <label class="radio-item">
+                  <input
+                    v-model="questionForm.enabled"
+                    type="radio"
+                    :value="false"
+                  />
+                  <span class="radio-custom"></span>
+                  否
+                </label>
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group full-width">
-                <label class="form-label">题目简介 *</label>
-                <textarea 
-                  v-model="formData.description" 
-                  class="form-textarea" 
-                  placeholder="请简要描述题目内容和解题思路"
-                  rows="4"
-                  maxlength="500"
-                ></textarea>
-                <div class="char-count">{{ formData.description.length }}/500</div>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">是否启用 *</label>
-                <div class="toggle-group">
-                  <label class="toggle-option">
-                    <input v-model="formData.enabled" type="radio" :value="true" />
-                    <span class="toggle-button" :class="{ active: formData.enabled === true }">是</span>
-                  </label>
-                  <label class="toggle-option">
-                    <input v-model="formData.enabled" type="radio" :value="false" />
-                    <span class="toggle-button" :class="{ active: formData.enabled === false }">否</span>
-                  </label>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">最大尝试次数</label>
-                <input 
-                  v-model.number="formData.maxAttempts" 
-                  type="number" 
-                  class="form-input" 
-                  min="1" 
-                  max="100"
-                />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Flag模板</label>
-                <input 
-                  v-model="formData.flagTemplate" 
-                  type="text" 
-                  class="form-input" 
-                  placeholder="flag{...}"
-                  readonly
-                />
-                <div class="form-hint">系统将自动生成随机Flag</div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">有效时间（秒）</label>
-                <input 
-                  v-model.number="formData.validTime" 
-                  type="number" 
-                  class="form-input" 
-                  min="60" 
-                  max="86400"
-                />
-                <div class="form-hint">{{ formatTime(formData.validTime) }}</div>
+            <div class="form-group half-width">
+              <label class="form-label">难度评级</label>
+              <div class="star-rating">
+                <span
+                  v-for="star in 5"
+                  :key="star"
+                  class="star"
+                  :class="{ 'active': star <= questionForm.difficulty }"
+                  @click="questionForm.difficulty = star"
+                >
+                  ★
+                </span>
               </div>
             </div>
           </div>
-          
-          <!-- 导航按钮 -->
-          <div class="card-footer">
-            <button 
-              v-if="currentStep > 1" 
-              class="nav-btn prev-btn" 
-              @click="prevStep"
+
+          <div class="form-group">
+            <label class="form-label">Flag <span class="required">*</span></label>
+            <input
+              v-model="questionForm.flag"
+              type="text"
+              class="form-input"
+              placeholder="请输入Flag，例如：flag{your_flag_here}"
+            />
+            <div class="form-hint">请输入完整的Flag，系统将自动生成Flag</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">题目标签 <span class="required">*</span></label>
+            <select
+              v-model="questionForm.tag_id"
+              class="form-select"
             >
-              ← 上一步
-            </button>
-            <button 
-              v-if="currentStep < 3" 
-              class="nav-btn next-btn" 
-              @click="nextStep"
-              :disabled="!canProceed"
-            >
-              下一步 →
-            </button>
+              <option value="">请选择题目标签</option>
+              <option value="1">电子数据取证</option>
+              <option value="2">渗透测试</option>
+              <option value="3">系统安全</option>
+              <option value="4">密码技术与应用</option>
+              <option value="5">恶意软件分析</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half-width">
+              <label class="form-label">有效时间（秒） <span class="required">*</span></label>
+              <input
+                v-model.number="questionForm.validTime"
+                type="number"
+                class="form-input"
+                min="1"
+                placeholder="3600"
+              />
+            </div>
+
+            <div class="form-group half-width">
+              <label class="form-label">题目星级 <span class="required">*</span></label>
+              <select
+                v-model="questionForm.star"
+                class="form-select"
+              >
+                <option value="1">⭐ 1星</option>
+                <option value="2">⭐⭐ 2星</option>
+                <option value="3">⭐⭐⭐ 3星</option>
+                <option value="4">⭐⭐⭐⭐ 4星</option>
+                <option value="5">⭐⭐⭐⭐⭐ 5星</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 第二步：需求输入 -->
-      <div v-if="currentStep === 2" class="step-content">
-        <div class="form-card">
-          <div class="form-header">
-            <h2>💡 需求输入</h2>
-            <p>详细描述您的题目需求，AI将根据您的描述生成相应的CTF题目</p>
-          </div>
-          
-          <div class="form-body">
-            <div class="form-group full-width">
-              <label class="form-label">题目需求描述 *</label>
-              <textarea 
-                v-model="formData.requirements" 
-                class="form-textarea large" 
-                placeholder="请详细描述您想要的CTF题目类型、知识点、解题方式等需求&#10;&#10;例如：Web安全题目，考察SQL注入，难度适中..."
-                rows="8"
-              ></textarea>
-              <div class="char-count">{{ formData.requirements.length }} 字符</div>
-            </div>
-            
-            <div class="requirements-tips">
-              <h4>💡 写作建议：</h4>
-              <ul>
-                <li>明确指出题目类型（Web、Pwn、Crypto、Misc等）</li>
-                <li>描述想要考察的具体知识点或技能</li>
-                <li>说明题目的应用场景或背景故事</li>
-                <li>提及特殊要求或限制条件</li>
-                <li>如有参考题目，可以简要说明</li>
-              </ul>
-            </div>
-          </div>
-          
-          <!-- 导航按钮 -->
-          <div class="card-footer">
-            <button 
-              v-if="currentStep > 1" 
-              class="nav-btn prev-btn" 
-              @click="prevStep"
-            >
-              ← 上一步
-            </button>
-            <button 
-              v-if="currentStep < 3" 
-              class="nav-btn next-btn" 
-              @click="nextStep"
-              :disabled="!canProceed"
-            >
-              下一步 →
-            </button>
+      <!-- 第二步：需求输入界面 -->
+      <div v-else-if="currentStep === 2" class="step-content">
+        <h2 class="step-title">需求描述</h2>
+
+        <div class="form-container">
+          <div class="form-group">
+            <label class="form-label">请详细描述您的需求 <span class="required">*</span></label>
+            <textarea
+              v-model="requirementForm.description"
+              class="form-textarea large"
+              placeholder="请输入详细的需求描述，包括题目类型、涉及技术栈、期望的解题思路等..."
+              rows="10"
+            ></textarea>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- 第三步：网络拓扑配置 -->
-    <div v-if="currentStep === 3" class="step-content">
-      <div class="form-card">
-        <div class="form-header">
-          <h3>🌐 网络拓扑配置</h3>
-          <p>配置您的CTF题目网络环境</p>
-        </div>
-        
-        <div class="topology-container">
-          <!-- 网络区域列表 -->
-          <div class="network-zones">
-            <!-- 内网区域 -->
-            <div class="zone-row">
-              <div class="zone-label">内网:</div>
-              <div class="topology-nodes">
-                <TopologyNode 
-                  v-for="node in topology.internal" 
-                  :key="node.id"
-                  :node="node"
-                  :zone="node.zone"
-                  @add-branch="addBranch"
-                  @configure="configureNode"
-                />
-                <AddNodeButton 
-                  v-if="topology.internal.length === 0"
-                  zone="internal"
-                  @add="addInitialNode"
-                />
+      <!-- 第三步：漏洞注入界面 -->
+      <div v-else-if="currentStep === 3" class="step-content">
+        <h2 class="step-title">漏洞注入</h2>
+
+        <div class="form-container">
+          <div class="vulnerability-info">
+            <div class="info-card">
+              <div class="info-icon">🔒</div>
+              <div class="info-content">
+                <h3>漏洞注入说明</h3>
+                <p>在这个步骤中，您可以描述希望在部署环境中注入的安全漏洞。AI将根据您的描述自动生成相应的漏洞配置和利用场景。</p>
               </div>
             </div>
-            
-            <!-- DMZ区域 -->
-            <div class="zone-row">
-              <div class="zone-label">DMZ:</div>
-              <div class="topology-nodes">
-                <TopologyNode 
-                  v-for="node in topology.dmz" 
-                  :key="node.id"
-                  :node="node"
-                  :zone="node.zone"
-                  @add-branch="addBranch"
-                  @configure="configureNode"
-                />
-                <AddNodeButton 
-                  v-if="topology.dmz.length === 0"
-                  zone="dmz"
-                  @add="addInitialNode"
-                />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">漏洞描述 <span class="required">*</span></label>
+            <textarea
+              v-model="vulnerabilityForm.description"
+              class="form-textarea large"
+              placeholder="请详细描述您希望注入的漏洞类型和特征，例如：SQL注入漏洞、XSS漏洞、文件上传漏洞、权限提升漏洞等。请包含漏洞位置、触发条件、利用方式等信息..."
+              rows="12"
+            ></textarea>
+          </div>
+
+          <div class="vulnerability-examples">
+            <h4>漏洞描述示例：</h4>
+            <div class="example-list">
+              <div class="example-item" @click="fillExample('sql')">
+                <strong>SQL注入漏洞：</strong>
+                <span>在用户登录页面存在SQL注入漏洞，攻击者可以通过构造特殊的用户名或密码绕过身份验证...</span>
               </div>
-            </div>
-            
-            <!-- 攻击区域 -->
-            <div class="zone-row">
-              <div class="zone-label">攻击区:</div>
-              <div class="topology-nodes">
-                <TopologyNode 
-                  v-for="node in topology.attack" 
-                  :key="node.id"
-                  :node="node"
-                  :zone="node.zone"
-                  @add-branch="addBranch"
-                  @configure="configureNode"
-                />
-                <AddNodeButton 
-                  v-if="topology.attack.length === 0"
-                  zone="attack"
-                  @add="addInitialNode"
-                />
+              <div class="example-item" @click="fillExample('xss')">
+                <strong>XSS漏洞：</strong>
+                <span>在评论功能中存在存储型XSS漏洞，用户提交的内容未经过滤直接显示，可执行恶意脚本...</span>
+              </div>
+              <div class="example-item" @click="fillExample('upload')">
+                <strong>文件上传漏洞：</strong>
+                <span>文件上传功能存在安全漏洞，可以上传恶意文件获取服务器权限...</span>
               </div>
             </div>
           </div>
         </div>
-        
-        <!-- 调试信息 -->
-        <div style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 12px; color: #666;">
-          <strong>调试信息:</strong><br>
-          canProceed: {{ canProceed }}<br>
-          已配置节点数: {{ getAllConfiguredNodes().length }}<br>
-          <button @click="logTopology" style="font-size: 11px; margin: 5px 0; padding: 2px 8px;">打印拓扑到控制台</button>
-        </div>
-        
-        <!-- 导航按钮 -->
-        <div class="card-footer">
-          <button 
-            class="nav-btn prev-btn" 
-            @click="prevStep"
-          >
-            ← 上一步
-          </button>
-          <button 
-            class="nav-btn next-btn" 
-            @click="nextStep"
-            :disabled="!canProceed"
-          >
-            下一步 →
-          </button>
+      </div>
+
+      <!-- 第四步：生成确认界面 -->
+      <div v-else-if="currentStep === 4" class="step-content">
+        <h2 class="step-title">生成确认</h2>
+
+        <div class="form-container">
+          <div class="confirmation-info">
+            <div class="info-card">
+              <div class="info-icon">📋</div>
+              <div class="info-content">
+                <h3>题目信息确认</h3>
+                <p>请确认以下题目配置信息，确认无误后点击"提交部署"开始生成CTF题目。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="confirmation-details">
+            <div class="detail-section">
+              <h4>基础信息</h4>
+              <div class="detail-item">
+                <label>题目标题：</label>
+                <span>{{ questionForm.title }}</span>
+              </div>
+              <div class="detail-item">
+                <label>题目简介：</label>
+                <span>{{ questionForm.description }}</span>
+              </div>
+              <div class="detail-item">
+                <label>题目标签：</label>
+                <span>{{ getTagLabel(questionForm.tag_id) }}</span>
+              </div>
+              <div class="detail-item">
+                <label>Flag：</label>
+                <span>{{ questionForm.flag }}</span>
+              </div>
+              <div class="detail-item">
+                <label>题目星级：</label>
+                <span>{{ '⭐'.repeat(questionForm.star) }}</span>
+              </div>
+              <div class="detail-item">
+                <label>有效时间：</label>
+                <span>{{ questionForm.validTime }} 秒</span>
+              </div>
+              <div class="detail-item">
+                <label>最大尝试次数：</label>
+                <span>{{ questionForm.maxAttempts }} 次</span>
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h4>需求描述</h4>
+              <div class="detail-content">
+                {{ requirementForm.description }}
+              </div>
+            </div>
+
+            <div class="detail-section">
+              <h4>漏洞配置</h4>
+              <div class="detail-content">
+                {{ vulnerabilityForm.description }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 第四步：生成拓扑图 -->
-    <div v-if="currentStep === 4" class="step-content">
-      <div class="form-card">
-        <div class="form-header">
-          <h3>🎨 生成拓扑图</h3>
-          <p>基于您的网络配置生成可视化拓扑图</p>
-        </div>
-        
-        <div class="topology-generation">
-          <!-- 配置摘要 -->
-          <div class="config-summary">
-            <h4>📋 配置摘要</h4>
-            <div class="summary-grid">
-              <div class="summary-item">
-                <div class="summary-label">题目名称:</div>
-                <div class="summary-value">{{ formData.title }}</div>
-              </div>
-              <div class="summary-item">
-                <div class="summary-label">难度等级:</div>
-                <div class="summary-value">{{ getDifficultyText(formData.difficulty) }}</div>
-              </div>
-              <div class="summary-item">
-                <div class="summary-label">网络分区:</div>
-                <div class="summary-value">
-                  <span v-for="(nodes, zone) in topology" :key="zone" class="zone-tag">
-                    {{ getZoneName(zone) }}
-                    <span class="node-count">({{ getConfiguredNodeCount(nodes) }}个节点)</span>
-                  </span>
-                </div>
-              </div>
-              <div class="summary-item">
-                <div class="summary-label">部署ID:</div>
-                <div class="summary-value">{{ deployId || '未设置' }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 生成状态区域 -->
-          <div class="generation-area">
-            <!-- 未开始生成状态 -->
-            <div v-if="generationState === 'idle'" class="generation-idle">
-              <div class="idle-icon">🎯</div>
-              <h4>准备生成拓扑图</h4>
-              <p>点击下方按钮开始生成您的网络拓扑图</p>
-              <div class="button-group">
-                <button class="generate-btn" @click="startTopologyGeneration">
-                  🚀 立即生成拓扑图
-                </button>
-                <button class="debug-btn" @click="checkDeployStatus" style="margin-left: 10px;">
-                  🔍 检查状态
-                </button>
-              </div>
-              <div style="margin-top: 15px;">
-                <button @click="logDevicesData" style="font-size: 12px; padding: 5px 10px; background: #e6f7ff; border: 1px solid #91d5ff; border-radius: 4px; color: #1890ff;">
-                  🔍 预览设备数据
-                </button>
-              </div>
-            </div>
-
-            <!-- 第一阶段：配置处理中 -->
-            <div v-if="generationState === 'processing'" class="generation-processing">
-              <div class="processing-animation">
-                <div class="spinner"></div>
-              </div>
-              <h4>⚙️ 正在处理网络配置</h4>
-              <p>AI正在分析您的网络架构，预计需要1-2分钟...</p>
-              <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: processingProgress + '%' }"></div>
-              </div>
-              <div class="progress-text">{{ processingProgress }}% 完成</div>
-            </div>
-
-            <!-- 第二阶段：图片生成中 -->
-            <div v-if="generationState === 'rendering'" class="generation-rendering">
-              <div class="rendering-animation">
-                <div class="pulse-circle"></div>
-              </div>
-              <h4>🎨 正在生成拓扑图</h4>
-              <p>正在渲染可视化图表，即将完成...</p>
-              <div class="dots-loading">
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-              </div>
-            </div>
-
-            <!-- 生成完成状态 -->
-            <div v-if="generationState === 'completed'" class="generation-completed">
-              <div class="topology-result">
-                <h4>✅ 拓扑图生成完成！</h4>
-                <div class="topology-image-container">
-                  <img :src="generatedTopologyImage" alt="生成的网络拓扑图" class="topology-image" />
-                </div>
-                <div class="result-actions">
-                  <button class="action-btn download-btn" @click="downloadTopology">
-                    📥 下载拓扑图
-                  </button>
-                  <button class="action-btn regenerate-btn" @click="regenerateTopology">
-                    🔄 重新生成
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- 生成失败状态 -->
-            <div v-if="generationState === 'failed'" class="generation-failed">
-              <div class="error-icon">❌</div>
-              <h4>生成失败</h4>
-              <p class="error-message">{{ generationError }}</p>
-              <button class="retry-btn" @click="startTopologyGeneration">
-                🔄 重试生成
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 导航按钮 -->
-        <div class="card-footer">
-          <button 
-            class="nav-btn prev-btn" 
-            @click="prevStep"
-          >
-            ← 上一步
-          </button>
-          <button 
-            v-if="generationState === 'completed'"
-            class="nav-btn submit-btn" 
-            @click="finalSubmit"
-          >
-            完成部署 🎉
-          </button>
-        </div>
-      </div>
+    <!-- 导航按钮 -->
+    <div class="navigation-buttons">
+      <button
+        v-if="currentStep > 1"
+        @click="prevStep"
+        class="nav-button prev-button"
+      >
+        上一步
+      </button>
+      <button
+        @click="nextStep"
+        class="nav-button next-button"
+        :disabled="!isCurrentStepValid || isSubmitting"
+      >
+        <span v-if="isSubmitting && currentStep === 3">
+          正在注入漏洞...
+        </span>
+        <span v-else-if="isSubmitting && currentStep === 4">
+          正在提交部署...
+        </span>
+        <span v-else>
+          {{ currentStep === steps.length ? '提交部署' : '下一步' }}
+        </span>
+      </button>
     </div>
-
-    <!-- 子网配置弹窗 -->
-    <SubnetConfigDialog 
-      v-model="showSubnetDialog"
-      @confirm="handleSubnetConfig"
-    />
-    
-    <!-- 节点配置弹窗 -->
-    <NodeConfigDialog 
-      v-model="showNodeDialog"
-      :node="currentConfigNode"
-      @confirm="handleNodeConfig"
-    />
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineComponent, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { createQuestion, type CreateQuestionRequest } from '@/api/question'
-import { 
-  inputScenario, 
-  inputDevices,
-  generateTopology,
-  generateTopologyImage,
-  generateDockerCompose,
-  type InputScenarioRequest,
-  type InputDevicesRequest,
-  type GenerateTopologyRequest,
-  type TopologyImageResponse,
-  type DeviceZone,
-  type TargetMachine
-} from '@/api/deploy'
+import { ref, computed } from 'vue'
+// import { injectVulnerability, type VulnerabilityInjectionRequest } from '@/api/deploy'
+// import { ElMessage } from 'element-plus'
 
-// 拓扑节点组件
-const TopologyNode = defineComponent({
-  name: 'TopologyNode',
-  props: {
-    node: Object,
-    zone: String
-  },
-  emits: ['add-branch', 'configure'],
-  components: {
-    // 递归组件自引用
-    TopologyNode: 'TopologyNode'
-  },
-  setup(props) {
-    // 调试日志
-    console.log('TopologyNode props:', props)
-    return {}
-  },
-  template: `
-    <div class="topology-node-container">
-      <div 
-        class="topology-node"
-        :class="{
-          'zone-internal': zone === 'internal',
-          'zone-dmz': zone === 'dmz', 
-          'zone-attack': zone === 'attack',
-          'add': node.type === 'add',
-          'subnet': node.type === 'subnet',
-          'subnet-configured': node.type === 'subnet-configured',
-          'config': node.type === 'config',
-          'configured': node.type === 'configured' || node.configured
-        }"
-        @click="handleNodeClick"
-        :title="'Zone: ' + zone + ', Type: ' + node.type"
-      >
-        <div v-if="node.type === 'add'">+</div>
-        <div v-else-if="node.type === 'subnet'" class="node-text">配置子网网段</div>
-        <div v-else-if="node.type === 'subnet-configured'" class="node-text">{{ node.subnet || node.label }}</div>
-        <div v-else-if="node.type === 'config'" class="node-text">具体配置</div>
-        <div v-else-if="node.configured || node.type === 'configured'" class="configured-node">
-          <div class="node-type">{{ node.nodeType || node.type }}</div>
-          <div class="node-system">{{ node.system }}</div>
-          <div class="node-ip">{{ node.ip }}</div>
-        </div>
-        <div v-else class="default-node">
-          <div class="node-type">{{ node.type || '未知' }}</div>
-          <div class="node-details">{{ node.label || node.name || 'Node' }}</div>
-        </div>
-      </div>
-      
-      <!-- 显示子节点 -->
-      <div v-if="node.children && node.children.length > 0" class="node-connections">
-        <div v-for="child in node.children" :key="child.id" class="child-node">
-          <div class="connection-line"></div>
-          <TopologyNode 
-            :node="child" 
-            :zone="child.zone || zone"
-            @add-branch="$emit('add-branch', $event)"
-            @configure="$emit('configure', $event)"
-          />
-        </div>
-      </div>
-    </div>
-  `,
-  methods: {
-    handleNodeClick() {
-      console.log('Node clicked:', this.node, 'Zone:', this.zone)
-      if (this.node.type === 'add') {
-        this.$emit('add-branch', this.node)
-      } else if (this.node.type === 'subnet' || this.node.type === 'subnet-configured' || this.node.type === 'config') {
-        this.$emit('configure', this.node)
-      }
-    }
-  }
-})
-
-// 添加节点按钮组件  
-const AddNodeButton = defineComponent({
-  props: {
-    zone: String
-  },
-  emits: ['add'],
-  template: `
-    <div 
-      class="topology-node add"
-      :class="{
-        'zone-internal': zone === 'internal',
-        'zone-dmz': zone === 'dmz',
-        'zone-attack': zone === 'attack'
-      }"
-      @click="$emit('add', zone)"
-    >
-      +
-    </div>
-  `
-})
-
-// 子网配置对话框组件
-const SubnetConfigDialog = defineComponent({
-  props: {
-    modelValue: Boolean
-  },
-  emits: ['update:modelValue', 'confirm'],
-  setup(props, { emit }) {
-    const subnet = ref('')
-    
-    const handleConfirm = () => {
-      if (subnet.value.trim()) {
-        emit('confirm', { subnet: subnet.value })
-        subnet.value = ''
-        emit('update:modelValue', false)
-      }
-    }
-    
-    const handleCancel = () => {
-      subnet.value = ''
-      emit('update:modelValue', false)
-    }
-    
-    return { subnet, handleConfirm, handleCancel }
-  },
-  template: `
-    <div v-if="modelValue" class="dialog-overlay" @click.self="handleCancel">
-      <div class="dialog-content">
-        <h3>配置子网网段</h3>
-        <div class="form-group">
-          <input 
-            v-model="subnet"
-            type="text" 
-            class="form-input"
-            placeholder="xxx.xxx.xxx.xxx"
-            @keyup.enter="handleConfirm"
-          />
-        </div>
-        <div class="dialog-buttons">
-          <button class="btn btn-secondary" @click="handleCancel">取消</button>
-          <button class="btn btn-primary" @click="handleConfirm">确定</button>
-        </div>
-      </div>
-    </div>
-  `
-})
-
-// 节点配置对话框组件
-const NodeConfigDialog = defineComponent({
-  props: {
-    modelValue: Boolean,
-    node: Object
-  },
-  emits: ['update:modelValue', 'confirm'],
-  setup(props, { emit }) {
-    const nodeType = ref('Web服务器')
-    const system = ref('apache+php')
-    const ip = ref('')
-    const image = ref('apache:php')
-    
-    const nodeTypeOptions = [
-      'Web服务器',
-      '数据库服务器', 
-      'ftp服务器',
-      'Ad域控',
-      '攻击机kali'
-    ]
-    
-    const systemOptions = {
-      'Web服务器': ['apache+php', 'apache+python', 'apache+java', 'nginx+php', 'nginx+python', 'iis+asp'],
-      '数据库服务器': ['MySQL', 'PostgreSQL', 'MongoDB', 'SQLServer', 'Oracle', 'Redis'],
-      'ftp服务器': ['vsftpd', 'proftpd', 'pureftpd', 'filezilla'],
-      'Ad域控': ['Windows Server 2019', 'Windows Server 2016', 'Windows Server 2012'],
-      '攻击机kali': ['kali', 'parrot', 'blackarch', 'pentoo']
-    }
-    
-    const imageOptions = {
-      'Web服务器': ['apache:php', 'nginx:php', 'tomcat:latest', 'httpd:latest'],
-      '数据库服务器': ['mysql:latest', 'postgres:latest', 'mongo:latest', 'redis:latest'],
-      'ftp服务器': ['fauria/vsftpd', 'stilliard/pure-ftpd', 'delfer/alpine-ftp-server'],
-      'Ad域控': ['mcr.microsoft.com/windows/servercore', 'microsoft/windowsservercore'],
-      '攻击机kali': ['kalilinux/kali-rolling', 'parrotsec/security', 'blackarchlinux/blackarch']
-    }
-    
-    const validateIP = (ip) => {
-      const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
-      return ipRegex.test(ip)
-    }
-    
-    const handleConfirm = () => {
-      if (!nodeType.value || !system.value || !ip.value || !image.value) {
-        ElMessage.error('请填写所有必填项')
-        return
-      }
-      
-      if (!validateIP(ip.value)) {
-        ElMessage.error('请输入有效的IP地址格式')
-        return
-      }
-      
-      emit('confirm', {
-        nodeType: nodeType.value,
-        system: system.value,
-        ip: ip.value,
-        image: image.value
-      })
-      resetForm()
-      emit('update:modelValue', false)
-    }
-    
-    const handleCancel = () => {
-      resetForm()
-      emit('update:modelValue', false)
-    }
-    
-    const resetForm = () => {
-      nodeType.value = 'Web服务器'
-      system.value = 'apache+php'
-      ip.value = ''
-      image.value = 'apache:php'
-    }
-    
-    // 当节点类型改变时，自动更新系统和镜像选项
-    const updateSystemOptions = () => {
-      const systems = systemOptions[nodeType.value]
-      if (systems && systems.length > 0) {
-        system.value = systems[0]
-      }
-      const images = imageOptions[nodeType.value]
-      if (images && images.length > 0) {
-        image.value = images[0]
-      }
-    }
-    
-    // 监听节点类型变化
-    watch(nodeType, updateSystemOptions)
-    
-    return { 
-      nodeType, 
-      system, 
-      ip, 
-      image, 
-      nodeTypeOptions, 
-      systemOptions,
-      imageOptions,
-      handleConfirm, 
-      handleCancel 
-    }
-  },
-  template: `
-    <div v-if="modelValue" class="dialog-overlay" @click.self="handleCancel">
-      <div class="dialog-content config-dialog">
-        <h3>节点配置</h3>
-        <div class="form-group">
-          <label>类型:</label>
-          <select v-model="nodeType" class="form-select">
-            <option v-for="type in nodeTypeOptions" :key="type" :value="type">
-              {{ type }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>系统:</label>
-          <select v-model="system" class="form-select">
-            <option v-for="sys in systemOptions[nodeType]" :key="sys" :value="sys">
-              {{ sys }}
-            </option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>地址:</label>
-          <input 
-            v-model="ip"
-            type="text" 
-            class="form-input"
-            placeholder="xxx.xxx.xxx.xxx"
-          />
-        </div>
-        <div class="form-group">
-          <label>镜像:</label>
-          <select v-model="image" class="form-select">
-            <option v-for="img in imageOptions[nodeType]" :key="img" :value="img">
-              {{ img }}
-            </option>
-          </select>
-        </div>
-        <div class="dialog-buttons">
-          <button class="btn btn-secondary" @click="handleCancel">取消</button>
-          <button class="btn btn-primary" @click="handleConfirm">确定</button>
-        </div>
-      </div>
-    </div>
-  `
-})
-
-// 当前步骤
+// 步骤定义
+const steps = ['题目设置', '需求描述', '漏洞注入', '生成确认']
 const currentStep = ref(1)
 
-// 存储创建的题目ID和部署ID
-const questionId = ref<number | null>(null)
-const deployId = ref<number | null>(null)
-
-// 存储设备配置数据，待第四步使用
-const deviceConfigData = ref<any>(null)
-
-// 第四步：拓扑图生成相关状态
-const generationState = ref<'idle' | 'processing' | 'rendering' | 'completed' | 'failed'>('idle')
-const processingProgress = ref(0)
-const generatedTopologyImage = ref('')
-const generationError = ref('')
-
 // 表单数据
-const formData = ref({
+const questionForm = ref({
   title: '',
   description: '',
   enabled: true,
-  flagTemplate: 'flag{...}',
-  validTime: 3600,
-  difficulty: 3,
-  maxAttempts: 20,
-  requirements: ''
+  flag: '',
+  tag_id: null, // 标签ID (1-5)
+  validTime: 3600, // 有效时间，单位秒
+  star: 3, // 星级 (1-5)
+  maxAttempts: 20
 })
 
-// 拓扑数据
-const topology = ref({
-  internal: [],    // 内网节点
-  dmz: [],         // DMZ节点
-  attack: []       // 攻击区节点
+const requirementForm = ref({
+  description: ''
 })
 
-// 添加调试函数
-const logTopology = () => {
-  console.log('Current topology:', JSON.stringify(topology.value, null, 2))
+const vulnerabilityForm = ref({
+  description: ''
+})
+
+// 部署ID (实际使用时应该从路由参数或其他地方获取)
+const deployId = ref(1)
+
+// 加载状态
+const isSubmitting = ref(false)
+
+// 根据tag_id获取标签名称
+const getTagLabel = (tagId) => {
+  const tagMap = {
+    1: '电子数据取证',
+    2: '渗透测试',
+    3: '系统安全',
+    4: '密码技术与应用',
+    5: '恶意软件分析'
+  }
+  return tagMap[tagId] || '未选择'
 }
 
-const logDevicesData = () => {
-  const devices = convertTopologyToDevices()
-  console.log('Converted devices data:', JSON.stringify(devices, null, 2))
-  console.log('Deploy ID:', deployId.value)
-  console.log('Scenario (requirements):', formData.value.requirements)
-  ElMessage.success(`设备数据已打印到控制台，共 ${devices.length} 个区域`)
-}
-
-// 获取所有已配置的节点（包括嵌套的子节点）
-const getAllConfiguredNodes = () => {
-  const findConfiguredNodes = (nodes) => {
-    let configuredNodes = []
-    for (const node of nodes) {
-      if (node.configured === true) {
-        configuredNodes.push(node)
-      }
-      if (node.children && node.children.length > 0) {
-        configuredNodes = configuredNodes.concat(findConfiguredNodes(node.children))
-      }
-    }
-    return configuredNodes
+// 表单验证
+const isCurrentStepValid = computed(() => {
+  switch (currentStep.value) {
+    case 1:
+      return questionForm.value.title.trim() !== '' &&
+             questionForm.value.description.trim() !== '' &&
+             questionForm.value.flag.trim() !== '' &&
+             questionForm.value.tag_id &&
+             questionForm.value.validTime > 0 &&
+             questionForm.value.star >= 1 && questionForm.value.star <= 5
+    case 2:
+      return requirementForm.value.description.trim() !== ''
+    case 3:
+      return vulnerabilityForm.value.description.trim() !== ''
+    default:
+      return true
   }
-  
-  const allZones = [...topology.value.internal, ...topology.value.dmz, ...topology.value.attack]
-  return findConfiguredNodes(allZones)
-}
-
-// 对话框状态
-const showSubnetDialog = ref(false)
-const showNodeDialog = ref(false)
-const currentConfigNode = ref(null)
-const currentSubnetConfig = ref(null)
-
-// 节点ID计数器
-const nodeIdCounter = ref(1)
-
-// 计算属性
-const canProceed = computed(() => {
-  if (currentStep.value === 1) {
-    return formData.value.title.trim() !== '' && 
-           formData.value.description.trim() !== '' &&
-           formData.value.difficulty > 0
-  }
-  if (currentStep.value === 2) {
-    return formData.value.requirements.trim() !== ''
-  }
-  if (currentStep.value === 3) {
-    // 第三步需要至少有一个配置好的节点（包括嵌套的子节点）
-    return getAllConfiguredNodes().length > 0
-  }
-  return true
 })
 
-const canSubmit = computed(() => {
-  if (currentStep.value === 3) {
-    // 第三步需要至少有一个配置好的节点（包括嵌套的子节点）
-    return getAllConfiguredNodes().length > 0
-  }
-  return formData.value.requirements.trim() !== ''
-})
-
-// 方法
+// 导航方法
 const nextStep = async () => {
-  if (!canProceed.value || currentStep.value > 4) {
-    return
+  if (!isCurrentStepValid.value) return
+
+  // 如果是第三步（漏洞注入），调用API
+  if (currentStep.value === 3) {
+    await handleVulnerabilityInjection()
   }
 
-  try {
-    // 根据当前步骤调用相应的API
-    if (currentStep.value === 1) {
-      // 第一步完成时，创建题目
-      await createQuestionStep()
-    } else if (currentStep.value === 2) {
-      // 第二步完成时，提交scenario数据
-      await submitScenarioStep()
-    } else if (currentStep.value === 3) {
-      // 第三步完成时，收集设备配置数据但不发送
-      await collectDeviceConfigStep()
-    }
+  // 如果是第四步（最终确认），提交部署
+  if (currentStep.value === 4) {
+    await handleFinalSubmit()
+    return // 提交完成后不再前进步骤
+  }
 
+  if (currentStep.value < steps.length) {
     currentStep.value++
-    ElMessage.success(`进入第${currentStep.value}步`)
-    
+  }
+}
+
+// 处理漏洞注入
+const handleVulnerabilityInjection = async () => {
+  try {
+    isSubmitting.value = true
+
+    // TODO: 实现漏洞注入API调用
+    console.log('漏洞注入描述:', vulnerabilityForm.value.description)
+
+    // 模拟API调用
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    console.log('漏洞注入成功！')
   } catch (error) {
-    console.error('步骤切换失败:', error)
-    ElMessage.error('操作失败，请重试')
+    console.error('漏洞注入失败:', error)
+    throw error // 阻止步骤前进
+  } finally {
+    isSubmitting.value = false
   }
 }
 
-// 第一步：创建题目
-const createQuestionStep = async () => {
-  const questionData: CreateQuestionRequest = {
-    title: formData.value.title,
-    introduction: formData.value.description,
-    tag_id: 1, // 默认标签ID，可以根据需要修改
-    is_active: formData.value.enabled,
-    flag_prefix: formData.value.flagTemplate,
-    topology: null, // 初始时拓扑图为空，后续第四步会更新
-    valid_time: formData.value.validTime,
-    star: formData.value.difficulty
-  }
+// 处理最终提交
+const handleFinalSubmit = async () => {
+  try {
+    isSubmitting.value = true
 
-  const response = await createQuestion(questionData)
-  console.log('API Response:', response)
-  console.log('Response data:', response.data)
-  
-  if (response && response.code === 200 && response.data?.question_id) {
-    questionId.value = response.data.question_id
-    deployId.value = response.data.question_id // 使用question_id作为deploy_id
-    ElMessage.success('题目创建成功')
-    console.log('Created question ID:', questionId.value)
-  } else {
-    console.error('API响应不符合预期:', response)
-    throw new Error(response?.message || '题目创建失败')
-  }
-}
-
-// 第二步：提交scenario数据
-const submitScenarioStep = async () => {
-  if (!deployId.value) {
-    throw new Error('缺少部署ID')
-  }
-
-  const scenarioData: InputScenarioRequest = {
-    deploy_id: deployId.value,
-    scenario: formData.value.requirements
-  }
-
-  const response = await inputScenario(scenarioData)
-  console.log('Scenario API Response:', response)
-  if (response.code === 200) {
-    ElMessage.success('背景描述保存成功')
-    console.log('Scenario saved for deploy_id:', deployId.value)
-  } else {
-    console.error('Scenario API响应不符合预期:', response)
-    throw new Error(response.message || '背景描述保存失败')
-  }
-}
-
-// 第三步：收集设备配置数据（不发送，只存储）
-const collectDeviceConfigStep = async () => {
-  if (!deployId.value) {
-    throw new Error('缺少部署ID')
-  }
-
-  // 收集当前拓扑中的所有配置数据
-  const devices = []
-  
-  // 定义网络分区映射
-  const zoneMapping = {
-    'internal': { name: '内网', defaultSubnet: '192.168.1.0/24' },
-    'dmz': { name: 'DMZ', defaultSubnet: '10.0.0.0/24' },
-    'attack': { name: '攻击区', defaultSubnet: '172.16.0.0/24' }
-  }
-  
-  // 遍历所有网络分区
-  for (const [zoneKey, nodes] of Object.entries(topology.value)) {
-    const targetMachines = []
-    let subnet = zoneMapping[zoneKey]?.defaultSubnet || '192.168.1.0/24'
-    
-    // 递归收集所有已配置的节点
-    const collectConfiguredNodes = (nodeList) => {
-      for (const node of nodeList) {
-        if (node.configured && node.type === 'configured') {
-          // 如果节点有子网信息，使用它
-          if (node.subnet) {
-            subnet = node.subnet
-          }
-          
-          targetMachines.push({
-            machine_type: node.nodeType || node.type,
-            system: node.system || 'Unknown',
-            ip_address: node.ip || `${subnet.split('/')[0].split('.').slice(0, 3).join('.')}.${10 + targetMachines.length}`,
-            image: node.image || 'default:latest'
-          })
-        }
-        
-        // 递归处理子节点
-        if (node.children && node.children.length > 0) {
-          collectConfiguredNodes(node.children)
-        }
-      }
+    // 构建符合创建题目接口要求的数据
+    const questionData = {
+      title: questionForm.value.title,
+      introduction: questionForm.value.description, // 接口要求字段名为introduction
+      tag_id: parseInt(questionForm.value.tag_id), // 确保是数字类型
+      is_active: questionForm.value.enabled,
+      flag_prefix: questionForm.value.flag, // 接口要求字段名为flag_prefix
+      topology: {}, // 拓扑结构，暂时为空对象
+      valid_time: questionForm.value.validTime, // 接口要求字段名为valid_time
+      star: parseInt(questionForm.value.star) // 确保是数字类型
     }
-    
-    collectConfiguredNodes(nodes)
-    
-    // 如果该分区有配置的机器，则添加到devices中
-    if (targetMachines.length > 0) {
-      devices.push({
-        zone: zoneMapping[zoneKey]?.name || zoneKey,
-        subnet: subnet,
-        target_machines: targetMachines
-      })
-    }
+
+    // TODO: 调用创建题目接口 POST /api/question/insert
+    console.log('提交题目数据:', questionData)
+
+    // 模拟API调用
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
+    console.log('题目创建成功！')
+
+    // 可以在这里添加成功后的处理逻辑，比如跳转到结果页面
+    // router.push('/deploy/result')
+
+  } catch (error) {
+    console.error('题目创建失败:', error)
+    // 可以在这里添加错误处理，比如显示错误消息
+    throw error
+  } finally {
+    isSubmitting.value = false
   }
-  
-  // 构建完整的设备配置数据
-  deviceConfigData.value = {
-    deploy_id: deployId.value,
-    devices: devices
-  }
-  
-  console.log('设备配置数据已收集:', deviceConfigData.value)
-  ElMessage.success('设备配置已保存，准备进入最终步骤')
 }
 
 const prevStep = () => {
   if (currentStep.value > 1) {
     currentStep.value--
-    ElMessage.info(`返回第${currentStep.value}步`)
   }
 }
 
-const submitForm = () => {
-  if (canSubmit.value) {
-    ElMessage.success('正在生成CTF题目，请稍候...')
-    // 这里可以调用API提交表单数据
-    console.log('提交的表单数据:', formData.value)
+// 填充漏洞示例
+const fillExample = (type: string) => {
+  const examples = {
+    sql: '在Web应用的用户登录模块存在SQL注入漏洞。具体表现为：1. 登录表单的用户名字段未进行输入验证和参数化查询；2. 攻击者可以通过输入特制的SQL语句（如：admin\' OR \'1\'=\'1\' --）绕过身份验证；3. 利用此漏洞可以获取数据库中的用户信息，包括密码哈希等敏感数据；4. 进一步可能导致数据库完全被控制。',
+    xss: '在Web应用的评论/留言功能中存在存储型XSS漏洞。具体表现为：1. 用户提交的评论内容未经过HTML实体编码直接存储到数据库；2. 当其他用户查看包含恶意脚本的评论时，恶意代码会在其浏览器中执行；3. 攻击者可以通过插入<script>标签盗取用户Cookie、会话信息；4. 可能导致账户劫持、钓鱼攻击等安全风险。',
+    upload: '在Web应用的文件上传功能中存在任意文件上传漏洞。具体表现为：1. 文件上传接口仅检查文件扩展名，未验证文件内容类型；2. 攻击者可以上传webshell（如.php、.jsp、.aspx等后门文件）；3. 上传的恶意文件可以直接通过Web路径访问执行；4. 利用此漏洞可以获取服务器shell权限，进行进一步的内网渗透。'
   }
-}
-
-const getDifficultyText = (difficulty) => {
-  const difficultyMap = {
-    1: '入门',
-    2: '简单', 
-    3: '中等',
-    4: '困难',
-    5: '极难'
-  }
-  return difficultyMap[difficulty] || '未设置'
-}
-
-const formatTime = (seconds) => {
-  if (seconds < 60) {
-    return `${seconds}秒`
-  } else if (seconds < 3600) {
-    return `${Math.floor(seconds / 60)}分钟`
-  } else if (seconds < 86400) {
-    return `${Math.floor(seconds / 3600)}小时`
-  } else {
-    return `${Math.floor(seconds / 86400)}天`
-  }
-}
-
-// 第四步相关辅助函数
-const getZoneName = (zone) => {
-  const zoneNames = {
-    'internal': '内网',
-    'dmz': 'DMZ',
-    'attack': '攻击区'
-  }
-  return zoneNames[zone] || zone
-}
-
-const getConfiguredNodeCount = (nodes) => {
-  let count = 0
-  const countNodes = (nodeList) => {
-    for (const node of nodeList) {
-      if (node.configured && node.type === 'configured') {
-        count++
-      }
-      if (node.children && node.children.length > 0) {
-        countNodes(node.children)
-      }
-    }
-  }
-  countNodes(nodes)
-  return count
-}
-
-// 拓扑图生成相关方法
-const startTopologyGeneration = async () => {
-  try {
-    // 重置状态
-    generationState.value = 'processing'
-    processingProgress.value = 0
-    generationError.value = ''
-    
-    ElMessage.info('开始生成拓扑图，整个过程可能需要1-3分钟，请耐心等待...')
-    
-    // 添加详细的调试信息
-    console.log('=== 拓扑生成流程开始 ===')
-    console.log('当前deployId:', deployId.value)
-    console.log('当前拓扑数据:', JSON.stringify(topology.value, null, 2))
-    
-    // 第一步：发送场景描述 (20%) - 快速完成
-    console.log('步骤1: 发送场景描述...')
-    await sendScenarioDescription()
-    processingProgress.value = 20
-    console.log('步骤1: 场景描述发送成功')
-    
-    // 第二步：发送设备信息 (40%) - 快速完成
-    console.log('步骤2: 发送设备信息...')
-    await sendDevicesInfo()
-    processingProgress.value = 40
-    console.log('步骤2: 设备信息发送成功')
-    
-    // 第三步：生成拓扑序列 (70%) - 耗时1-2分钟，AI分析需求
-    console.log('步骤3: 生成拓扑序列...')
-    await generateTopologySequence()
-    processingProgress.value = 70
-    console.log('步骤3: 拓扑序列生成成功')
-    
-    // 切换到渲染阶段
-    generationState.value = 'rendering'
-    
-    // 第四步：生成拓扑图像 (100%) - 耗时10-30秒，图像渲染
-    const imageResult = await generateTopologyImageFile()
-    processingProgress.value = 100
-    
-    // 完成
-    generationState.value = 'completed'
-    generatedTopologyImage.value = imageResult.topology_url
-    ElMessage.success('拓扑图生成完成！')
-    
-  } catch (error: any) {
-    console.error('=== 拓扑图生成失败 ===')
-    console.error('错误详情:', error)
-    console.error('当前deployId:', deployId.value)
-    console.error('当前步骤进度:', processingProgress.value)
-    
-    // 提供更具体的错误信息
-    let errorMessage = '生成拓扑图时发生未知错误'
-    if (error.message) {
-      errorMessage = error.message
-    }
-    
-    // 根据HTTP状态码提供更友好的错误信息
-    if (error.response) {
-      const status = error.response.status
-      console.error('HTTP状态码:', status)
-      console.error('响应数据:', error.response.data)
-      
-      if (status === 404) {
-        errorMessage = '后端服务未找到对应的部署记录，请检查deployId是否正确'
-      } else if (status === 500) {
-        errorMessage = '后端服务器错误，请稍后重试或联系管理员'
-      } else if (status === 403) {
-        errorMessage = '权限不足，请检查登录状态'
-      }
-    }
-    
-    generationState.value = 'failed'
-    generationError.value = errorMessage
-    ElMessage.error('拓扑图生成失败: ' + errorMessage)
-  }
-}
-
-// 发送场景描述
-const sendScenarioDescription = async () => {
-  if (!deployId.value) {
-    throw new Error('部署ID不存在')
-  }
-  
-  const scenarioData: InputScenarioRequest = {
-    deploy_id: deployId.value,
-    scenario: formData.value.requirements
-  }
-  
-  console.log('发送场景描述:', scenarioData)
-  const response = await inputScenario(scenarioData)
-  console.log('场景描述响应:', response)
-  
-  // 检查响应是否存在且包含正确的结构
-  if (!response || response.code !== 200) {
-    throw new Error(response?.message || '发送场景描述失败')
-  }
-  
-  console.log('场景描述发送成功')
-}
-
-// 发送设备信息
-const sendDevicesInfo = async () => {
-  if (!deployId.value) {
-    throw new Error('部署ID不存在')
-  }
-  
-  // 将拓扑数据转换为API所需的格式
-  const devices: DeviceZone[] = convertTopologyToDevices()
-  
-  const devicesData: InputDevicesRequest = {
-    deploy_id: deployId.value,
-    devices: devices
-  }
-  
-  console.log('发送设备信息:', devicesData)
-  const response = await inputDevices(devicesData)
-  console.log('设备信息响应:', response)
-  
-  if (!response || response.code !== 200) {
-    throw new Error(response?.message || '发送设备信息失败')
-  }
-  
-  console.log('设备信息发送成功')
-}
-
-// 生成拓扑序列
-const generateTopologySequence = async () => {
-  if (!deployId.value) {
-    throw new Error('部署ID不存在')
-  }
-  
-  const topologyData: GenerateTopologyRequest = {
-    deploy_id: deployId.value
-  }
-  
-  console.log('开始生成拓扑序列，Deploy ID:', deployId.value)
-  console.log('发送的数据:', topologyData)
-  
-  try {
-    const response = await generateTopology(topologyData)
-    console.log('拓扑序列生成响应:', response)
-    
-    if (!response || response.code !== 200) {
-      console.error('拓扑序列生成失败，响应码:', response?.code)
-      console.error('错误消息:', response?.message)
-      throw new Error(response?.message || '生成拓扑序列失败')
-    }
-    
-    console.log('拓扑序列生成成功')
-  } catch (error: any) {
-    console.error('调用生成拓扑序列API时发生错误:', error)
-    
-    // 如果是网络错误或HTTP错误，提供更详细的信息
-    if (error.response) {
-      const status = error.response.status
-      const data = error.response.data
-      console.error('HTTP错误状态:', status)
-      console.error('错误响应数据:', data)
-      
-      if (status === 404) {
-        throw new Error(`部署记录不存在 (ID: ${deployId.value})，请确认数据是否正确保存`)
-      } else if (status === 500) {
-        throw new Error(`服务器内部错误: ${data?.detail || '未知错误'}`)
-      } else {
-        throw new Error(`HTTP ${status}: ${data?.detail || data?.message || error.message}`)
-      }
-    } else if (error.request) {
-      throw new Error('网络连接失败，请检查网络状态')
-    } else {
-      throw error
-    }
-  }
-}
-
-// 生成拓扑图像
-const generateTopologyImageFile = async (): Promise<TopologyImageResponse> => {
-  if (!deployId.value) {
-    throw new Error('部署ID不存在')
-  }
-  
-  const imageData: GenerateTopologyRequest = {
-    deploy_id: deployId.value
-  }
-  
-  console.log('开始生成拓扑图像，Deploy ID:', deployId.value)
-  const response = await generateTopologyImage(imageData)
-  console.log('拓扑图像生成响应:', response)
-  
-  if (!response || response.code !== 200 || !response.data) {
-    console.error('拓扑图像生成失败，响应:', response)
-    throw new Error(response?.message || '生成拓扑图像失败')
-  }
-  
-  console.log('拓扑图像生成成功，URL:', response.data.topology_url)
-  return response.data
-}
-
-// 将拓扑数据转换为API所需的设备格式
-const convertTopologyToDevices = (): DeviceZone[] => {
-  const devices: DeviceZone[] = []
-  
-  // 处理内网区域
-  if (topology.value.internal.length > 0) {
-    const internalDevices = convertZoneToDevices(topology.value.internal, 'internal', '192.168.2.0/24')
-    if (internalDevices) devices.push(internalDevices)
-  }
-  
-  // 处理DMZ区域
-  if (topology.value.dmz.length > 0) {
-    const dmzDevices = convertZoneToDevices(topology.value.dmz, 'dmz', '192.168.1.0/24')
-    if (dmzDevices) devices.push(dmzDevices)
-  }
-  
-  // 处理攻击区域
-  if (topology.value.attack.length > 0) {
-    const attackDevices = convertZoneToDevices(topology.value.attack, 'attack', '192.168.100.0/24')
-    if (attackDevices) devices.push(attackDevices)
-  }
-  
-  return devices
-}
-
-// 将单个区域的节点转换为设备信息
-const convertZoneToDevices = (nodes: any[], zone: string, defaultSubnet: string): DeviceZone | null => {
-  const targetMachines: TargetMachine[] = []
-  
-  const processNodes = (nodeList: any[]) => {
-    for (const node of nodeList) {
-      if (node.configured && node.type === 'configured') {
-        const machine: TargetMachine = {
-          machine_type: node.nodeType || 'Web服务器',
-          system: node.system || 'apache+php',
-          ip_address: node.ip || '自动分配',
-          image: node.image || 'apache+php'
-        }
-        targetMachines.push(machine)
-      }
-      
-      // 递归处理子节点
-      if (node.children && node.children.length > 0) {
-        processNodes(node.children)
-      }
-    }
-  }
-  
-  processNodes(nodes)
-  
-  if (targetMachines.length === 0) {
-    return null
-  }
-  
-  const zoneNames = {
-    'internal': '内网区',
-    'dmz': 'DMZ区', 
-    'attack': '攻击区'
-  }
-  
-  return {
-    zone: zoneNames[zone as keyof typeof zoneNames] || zone,
-    subnet: defaultSubnet,
-    target_machines: targetMachines
-  }
-}
-
-const downloadTopology = () => {
-  if (!generatedTopologyImage.value) {
-    ElMessage.error('没有可下载的拓扑图')
-    return
-  }
-  
-  try {
-    // 创建下载链接
-    const link = document.createElement('a')
-    link.href = generatedTopologyImage.value
-    link.download = `topology_${deployId.value || 'generated'}.png`
-    link.target = '_blank'
-    
-    // 触发下载
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    ElMessage.success('拓扑图下载已开始')
-  } catch (error) {
-    console.error('下载失败:', error)
-    ElMessage.error('下载拓扑图失败')
-  }
-}
-
-const regenerateTopology = () => {
-  // 重置状态并重新开始生成
-  generationState.value = 'idle'
-  generatedTopologyImage.value = ''
-  processingProgress.value = 0
-  generationError.value = ''
-  ElMessage.info('准备重新生成拓扑图')
-}
-
-// 检查部署状态的调试函数
-const checkDeployStatus = () => {
-  console.log('=== 部署状态检查 ===')
-  console.log('当前deployId:', deployId.value)
-  console.log('当前questionId:', questionId.value)
-  console.log('题目数据:', JSON.stringify(formData.value, null, 2))
-  console.log('拓扑数据:', JSON.stringify(topology.value, null, 2))
-  
-  // 检查是否有配置的设备
-  const devices = convertTopologyToDevices()
-  console.log('转换后的设备数据:', JSON.stringify(devices, null, 2))
-  
-  if (!deployId.value) {
-    ElMessage.warning('❌ 部署ID不存在，请确保已完成前面的步骤')
-    return
-  }
-  
-  if (devices.length === 0) {
-    ElMessage.warning('❌ 没有配置任何设备，请先配置网络设备')
-    return
-  }
-  
-  if (!formData.value.requirements) {
-    ElMessage.warning('❌ 缺少场景描述，请在第一步中添加需求描述')
-    return
-  }
-  
-  ElMessage.success('✅ 基础检查通过，deployId和设备数据都存在')
-}
-
-const finalSubmit = () => {
-  console.log('最终提交...')
-  ElMessage.success('CTF题目创建完成！')
-}
-
-// 拓扑相关方法
-const addInitialNode = (zone) => {
-  const nodeId = ++nodeIdCounter.value
-  const newNode = {
-    id: nodeId,
-    zone: zone, // 确保zone值正确传递
-    type: 'add',
-    configured: false,
-    children: []
-  }
-  topology.value[zone].push(newNode)
-  console.log(`Added initial node to ${zone}:`, newNode)
-  logTopology()
-}
-
-const addBranch = (parentNode) => {
-  const nodeId = ++nodeIdCounter.value
-  
-  // 如果父节点是"加号"节点，转换为子网配置节点
-  if (parentNode.type === 'add') {
-    parentNode.type = 'subnet'
-    parentNode.label = '配置子网网段'
-    showSubnetDialog.value = true
-    currentSubnetConfig.value = parentNode
-  } else {
-    // 否则添加新的子节点
-    const newNode = {
-      id: nodeId,
-      zone: parentNode.zone,
-      type: 'subnet',
-      configured: false,
-      children: [],
-      parent: parentNode.id,
-      label: '配置子网网段'
-    }
-    parentNode.children.push(newNode)
-    showSubnetDialog.value = true
-    currentSubnetConfig.value = newNode
-  }
-}
-
-const configureNode = (node) => {
-  if (node.type === 'subnet' || node.type === 'subnet-configured') {
-    showSubnetDialog.value = true
-    currentSubnetConfig.value = node
-  } else if (node.type === 'config' || node.type === 'configured' || node.type === 'add') {
-    // add类型节点也可以配置，配置后会变成configured类型
-    showNodeDialog.value = true
-    currentConfigNode.value = node
-  }
-}
-
-const handleSubnetConfig = (subnetData) => {
-  if (currentSubnetConfig.value) {
-    currentSubnetConfig.value.subnet = subnetData.subnet
-    currentSubnetConfig.value.label = subnetData.subnet
-    currentSubnetConfig.value.type = 'subnet-configured'
-    
-    // 添加具体配置节点
-    const configNode = {
-      id: ++nodeIdCounter.value,
-      zone: currentSubnetConfig.value.zone,
-      type: 'config',
-      configured: false,
-      children: [],
-      parent: currentSubnetConfig.value.id,
-      label: '具体配置'
-    }
-    currentSubnetConfig.value.children.push(configNode)
-    
-    // 添加新的"加号"节点用于继续扩展
-    const addNode = {
-      id: ++nodeIdCounter.value,
-      zone: currentSubnetConfig.value.zone,
-      type: 'add',
-      configured: false,
-      children: [],
-      parent: currentSubnetConfig.value.id
-    }
-    currentSubnetConfig.value.children.push(addNode)
-    
-    console.log('Configured subnet:', currentSubnetConfig.value)
-    logTopology()
-  }
-  showSubnetDialog.value = false
-  currentSubnetConfig.value = null
-}
-
-const handleNodeConfig = (nodeData) => {
-  if (currentConfigNode.value) {
-    Object.assign(currentConfigNode.value, nodeData)
-    currentConfigNode.value.configured = true
-    currentConfigNode.value.type = 'configured'
-    currentConfigNode.value.label = `${nodeData.nodeType}\n${nodeData.system}\n${nodeData.ip}`
-    
-    console.log('Configured node:', currentConfigNode.value)
-    
-    // 如果当前节点是父级节点的唯一子节点，且父级还有空间，添加新的扩展节点
-    const parentZone = topology.value[currentConfigNode.value.zone]
-    const parentNode = findNodeById(parentZone, currentConfigNode.value.parent)
-    
-    console.log('Found parent node:', parentNode)
-    
-    if (parentNode && parentNode.children.length < 5) { // 限制每个分支最多5个子节点
-      const addNode = {
-        id: ++nodeIdCounter.value,
-        zone: currentConfigNode.value.zone,
-        type: 'add',
-        configured: false,
-        children: [],
-        parent: currentConfigNode.value.parent
-      }
-      parentNode.children.push(addNode)
-      console.log('Added new add node:', addNode)
-    }
-    
-    logTopology()
-  }
-  showNodeDialog.value = false
-  currentConfigNode.value = null
-}
-
-// 辅助函数：根据ID查找节点
-const findNodeById = (nodes, targetId) => {
-  for (const node of nodes) {
-    if (node.id === targetId) {
-      return node
-    }
-    if (node.children && node.children.length > 0) {
-      const found = findNodeById(node.children, targetId)
-      if (found) return found
-    }
-  }
-  return null
+  vulnerabilityForm.value.description = examples[type as keyof typeof examples] || ''
 }
 </script>
 
-
-
 <style scoped>
-/* 主容器 */
 .deploy-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: #fafbfc;
   padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
 }
 
-/* 进度条区域 */
-.progress-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: white;
-  border-bottom: 1px solid #e9ecef;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.progress-container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 12px 24px;
-}
-
+/* 进度条样式 */
 .progress-bar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 80px 0 100px;
+  border-bottom: 3px solid #e8eaed;
+  position: relative;
+  width: 100%;
+  min-height: 300px;
+  box-sizing: border-box;
+  display: block;
+}
+
+.progress-steps {
+  max-width: 800px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0;
+  justify-content: space-between;
+  padding: 40px 50px;
+  z-index: 2;
 }
 
 .progress-step {
@@ -1588,231 +494,240 @@ const findNodeById = (nodes, targetId) => {
   flex-direction: column;
   align-items: center;
   position: relative;
-  z-index: 2;
 }
 
-.step-number {
-  width: 32px;
-  height: 32px;
+.progress-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 25px;
+  left: 60px;
+  width: 120px;
+  height: 3px;
+  background: #e8eaed;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.progress-step.completed:not(:last-child)::after {
+  background: #4caf50;
+}
+
+.step-circle {
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background: #e9ecef;
-  color: #6c757d;
+  background: #e8eaed;
+  color: #5f6368;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 16px;
+  margin-bottom: 12px;
   transition: all 0.3s ease;
-  border: 2px solid #e9ecef;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.progress-step.active .step-number {
-  background: #3b82f6;
+.progress-step.active .step-circle {
+  background: #1976d2;
   color: white;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
 }
 
-.progress-step.completed .step-number {
-  background: #10b981;
+.progress-step.completed .step-circle {
+  background: #4caf50;
   color: white;
-  border-color: #10b981;
 }
 
 .step-label {
-  margin-top: 6px;
-  font-size: 0.8rem;
+  font-size: 16px;
+  color: #5f6368;
   font-weight: 500;
-  color: #6c757d;
-  transition: all 0.3s ease;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .progress-step.active .step-label {
-  color: #3b82f6;
-  font-weight: 600;
+  color: #1976d2;
 }
 
-.progress-step.completed .step-label {
-  color: #10b981;
-  font-weight: 600;
+
+
+.check-icon {
+  font-style: normal;
+  font-size: 18px;
 }
 
-.progress-line {
-  width: 100px;
-  height: 2px;
-  background: #e9ecef;
-  position: relative;
-  top: -16px;
-  z-index: 1;
-  transition: all 0.3s ease;
-}
-
-.progress-line.completed {
-  background: #10b981;
-}
-
-/* 主要内容区域 */
-.main-content {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 12px 24px 32px;
-  width: 100%;
-  box-sizing: border-box;
-  overflow-y: auto;
-  min-height: 0;
+/* 内容区域样式 */
+.content-area {
+  max-width: 800px;
+  margin: 40px auto 0;
+  padding: 60px 40px;
 }
 
 .step-content {
-  animation: fadeInUp 0.4s ease-out;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+  animation: fadeIn 0.3s ease;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* 表单卡片 */
-.form-card {
+.step-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #202124;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+/* 表单样式 */
+.form-container {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  border: 1px solid #e9ecef;
-  display: flex;
-  flex-direction: column;
-  height: fit-content;
-}
-
-.form-header {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-  padding: 12px 20px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.form-header h2 {
-  font-size: 1.3rem;
-  font-weight: 700;
-  margin: 0 0 4px 0;
-  letter-spacing: -0.025em;
-}
-
-.form-header p {
-  font-size: 0.85rem;
-  margin: 0;
-  opacity: 0.9;
-  font-weight: 400;
-}
-
-.form-body {
-  padding: 12px 20px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-/* 表单布局 */
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.form-row:last-child {
-  margin-bottom: 0;
+  padding: 40px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 24px;
 }
 
-.form-group.full-width {
-  grid-column: 1 / -1;
+.form-row {
+  display: flex;
+  gap: 20px;
+}
+
+.half-width {
+  flex: 1;
 }
 
 .form-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  color: #202124;
+  margin-bottom: 8px;
 }
 
-.form-input,
-.form-textarea {
-  padding: 8px 12px;
-  border: 2px solid #e5e7eb;
-  border-radius: 6px;
-  font-size: 0.85rem;
+.required {
+  color: #ea4335;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 16px;
   transition: all 0.2s ease;
-  background: #fafbfc;
-  font-family: inherit;
-}
-
-.form-input:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
   background: white;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.form-textarea {
-  resize: vertical;
-  min-height: 60px;
-  line-height: 1.4;
+.form-input:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
 }
 
-.form-textarea.large {
-  min-height: 100px;
+.form-select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  background: white;
+  cursor: pointer;
 }
 
-.form-input:read-only {
-  background: #f8f9fa;
-  color: #6c757d;
-  cursor: not-allowed;
-}
-
-.char-count {
-  font-size: 0.85rem;
-  color: #6c757d;
-  text-align: right;
-  margin-top: 6px;
+.form-select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
 }
 
 .form-hint {
-  font-size: 0.85rem;
-  color: #6c757d;
-  margin-top: 6px;
-  font-style: italic;
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
 }
 
-/* 难度选择器 */
-.difficulty-selector {
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 16px;
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.form-textarea.large {
+  min-height: 200px;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+/* 单选按钮样式 */
+.radio-group {
+  display: flex;
+  gap: 24px;
+}
+
+.radio-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #202124;
+}
+
+.radio-item input[type="radio"] {
+  display: none;
+}
+
+.radio-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #dadce0;
+  border-radius: 50%;
+  margin-right: 8px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.radio-item input[type="radio"]:checked + .radio-custom {
+  border-color: #1976d2;
+}
+
+.radio-item input[type="radio"]:checked + .radio-custom::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: #1976d2;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* 星级评分样式 */
+.star-rating {
+  display: flex;
+  gap: 4px;
 }
 
 .star {
-  font-size: 1.8rem;
-  color: #d1d5db;
+  font-size: 24px;
+  color: #dadce0;
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
@@ -1820,856 +735,215 @@ const findNodeById = (nodes, targetId) => {
 
 .star:hover,
 .star.active {
-  color: #fbbf24;
-  transform: scale(1.1);
+  color: #ffc107;
 }
 
-.difficulty-text {
-  margin-left: 12px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #3b82f6;
-  padding: 4px 12px;
-  background: rgba(59, 130, 246, 0.1);
-  border-radius: 20px;
+/* 漏洞注入样式 */
+.vulnerability-info {
+  margin-bottom: 24px;
 }
 
-/* 切换按钮组 */
-.toggle-group {
+.info-card {
   display: flex;
-  gap: 0;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 2px solid #e5e7eb;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
   background: #f8f9fa;
-}
-
-.toggle-option {
-  flex: 1;
-  position: relative;
-  cursor: pointer;
-}
-
-.toggle-option input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.toggle-button {
-  display: block;
-  padding: 12px 20px;
-  text-align: center;
-  font-weight: 500;
-  color: #6c757d;
-  background: transparent;
-  transition: all 0.2s ease;
-  border-right: 1px solid #e5e7eb;
-}
-
-.toggle-option:last-child .toggle-button {
-  border-right: none;
-}
-
-.toggle-button.active {
-  background: #3b82f6;
-  color: white;
-  font-weight: 600;
-}
-
-/* 需求输入提示 */
-.requirements-tips {
-  margin-top: 12px;
-  padding: 12px;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   border-radius: 8px;
-  border: 1px solid #bfdbfe;
+  border-left: 4px solid #1976d2;
 }
 
-.requirements-tips h4 {
-  color: #1e40af;
-  font-size: 0.85rem;
-  font-weight: 600;
+.info-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.info-content h3 {
   margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #202124;
 }
 
-.requirements-tips ul {
+.info-content p {
   margin: 0;
-  padding-left: 16px;
-  color: #374151;
+  font-size: 14px;
+  color: #5f6368;
+  line-height: 1.5;
+}
+
+.vulnerability-examples {
+  margin-top: 24px;
+}
+
+.vulnerability-examples h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.example-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.example-item {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e8eaed;
+}
+
+.example-item:hover {
+  background: #e8f0fe;
+  border-color: #1976d2;
+}
+
+.example-item strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #1976d2;
+  font-size: 14px;
+}
+
+.example-item span {
+  font-size: 13px;
+  color: #5f6368;
   line-height: 1.4;
 }
 
-.requirements-tips li {
-  margin-bottom: 2px;
-  font-size: 0.8rem;
-}
-
-/* 卡片底部按钮区域 */
-.card-footer {
-  border-top: 1px solid #f0f0f0;
-  padding: 20px 24px;
-  background: #fafafa;
-  border-radius: 0 0 12px 12px;
+/* 导航按钮样式 */
+.navigation-buttons {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 40px 40px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  gap: 16px;
+}
+
+.nav-button {
+  padding: 12px 32px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.prev-button {
+  background: white;
+  color: #1976d2;
+  border: 1px solid #1976d2;
+}
+
+.prev-button:hover {
+  background: #f8f9fa;
+}
+
+.next-button {
+  background: #1976d2;
+  color: white;
+  margin-left: auto;
+}
+
+.next-button:hover:not(:disabled) {
+  background: #1565c0;
+}
+
+.next-button:disabled {
+  background: #dadce0;
+  color: #9aa0a6;
+  cursor: not-allowed;
+}
+
+/* 确认页面样式 */
+.confirmation-info {
+  margin-bottom: 24px;
+}
+
+.confirmation-details {
   margin-top: 24px;
 }
 
-.nav-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
+.detail-section {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.detail-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.detail-section h4 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  color: #202124;
+}
+
+.detail-item {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 100px;
-  justify-content: center;
-}
-
-.prev-btn {
-  background: #f8f9fa;
-  color: #6c757d;
-  border: 2px solid #e9ecef;
-}
-
-.prev-btn:hover {
-  background: #e9ecef;
-  color: #495057;
-  transform: translateY(-1px);
-}
-
-.next-btn {
-  background: #3b82f6;
-  color: white;
-  border: 2px solid #3b82f6;
-}
-
-.next-btn:hover:not(:disabled) {
-  background: #1d4ed8;
-  border-color: #1d4ed8;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.submit-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  border: 2px solid #10b981;
-}
-
-.submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.nav-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* 让按钮右对齐当只有一个按钮时 */
-.card-footer:has(.next-btn:only-child),
-.card-footer:has(.submit-btn:only-child) {
-  justify-content: flex-end;
-}
-
-/* 网络拓扑样式 */
-.topology-container {
-  padding: 24px 0;
-}
-
-.network-zones {
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-}
-
-.zone-row {
-  display: flex;
+  margin-bottom: 12px;
   align-items: flex-start;
-  gap: 20px;
-  min-height: 80px;
 }
 
-.zone-label {
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: #374151;
-  width: 80px;
+.detail-item label {
+  min-width: 120px;
+  font-weight: 500;
+  color: #5f6368;
+  margin-right: 16px;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
 }
 
-.topology-nodes {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
+.detail-item span {
+  color: #202124;
   flex: 1;
 }
 
-/* 拓扑节点 */
-.topology-node {
-  min-width: 100px;
-  min-height: 60px;
+.detail-content {
+  padding: 16px;
+  background: #f8f9fa;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-  padding: 12px 16px;
-  text-align: center;
-  font-size: 0.9rem;
-  line-height: 1.3;
-  flex-shrink: 0;
-}
-
-/* 区域颜色 */
-.topology-node.zone-internal {
-  background: #dcfce7;
-  color: #166534;
-  border-color: #bbf7d0;
-}
-
-.topology-node.zone-dmz {
-  background: #dbeafe;
-  color: #1e40af;
-  border-color: #bfdbfe;
-}
-
-.topology-node.zone-attack {
-  background: #fed7ca;
-  color: #c2410c;
-  border-color: #fdba74;
-}
-
-/* 节点类型 */
-.topology-node.add {
-  border-style: dashed;
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.topology-node.add:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.topology-node.subnet,
-.topology-node.config {
-  border-style: solid;
-}
-
-.topology-node.subnet:hover,
-.topology-node.config:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.topology-node.configured {
-  background: #f3f4f6;
-  color: #374151;
-  border-color: #d1d5db;
-}
-
-/* 已配置节点内容 */
-.configured-node {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  text-align: center;
-}
-
-.node-type {
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-
-.node-system {
-  font-size: 0.8rem;
-  opacity: 0.8;
-}
-
-.node-ip {
-  font-size: 0.75rem;
-  font-family: monospace;
-  background: rgba(0, 0, 0, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.default-node {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  text-align: center;
-}
-
-.node-details {
-  font-size: 0.8rem;
-  opacity: 0.8;
-}
-
-/* 节点连接线 - 横向树布局 */
-.topology-node-container {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-}
-
-.node-connections {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-left: 30px;
-  margin-top: 10px;
-}
-
-.child-node {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.connection-line {
-  width: 30px;
-  height: 2px;
-  background: #d1d5db;
-  margin-right: 10px;
-  margin-top: 30px;
-  flex-shrink: 0;
-}
-
-.child-nodes {
-  display: flex;
-  flex-direction: row;
-  gap: 20px;
-  align-items: flex-start;
-  flex-wrap: nowrap;
-}
-
-/* 对话框样式 */
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.dialog-content {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  min-width: 400px;
-  max-width: 500px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-.dialog-content h3 {
-  margin: 0 0 20px 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #374151;
-  text-align: center;
-}
-
-.dialog-content .form-group {
-  margin-bottom: 16px;
-}
-
-.dialog-content .form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.dialog-content .form-input,
-.dialog-content .form-select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  transition: border-color 0.2s;
-}
-
-.dialog-content .form-input:focus,
-.dialog-content .form-select:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-}
-
-.dialog-buttons {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  margin-top: 24px;
-}
-
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.btn-secondary:hover {
-  background: #e5e7eb;
-}
-
-.btn-primary {
-  background: #3b82f6;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #2563eb;
-}
-
-.config-dialog {
-  min-width: 450px;
+  border-left: 4px solid #1976d2;
+  line-height: 1.6;
+  color: #202124;
+  white-space: pre-wrap;
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
-  .zone-row {
+@media (max-width: 900px) {
+  .content-area {
+    padding: 40px 20px;
+  }
+
+  .form-container {
+    padding: 30px 20px;
+  }
+
+  .navigation-buttons {
+    padding: 0 20px 40px;
+  }
+
+  .form-row {
     flex-direction: column;
     gap: 16px;
   }
-  
-  .zone-label {
-    width: auto;
+
+  .progress-steps {
+    padding: 0 20px;
   }
-  
-  .topology-nodes {
-    justify-content: center;
+
+  .step-line {
+    margin: 0 10px;
   }
-  
-  .dialog-content {
-    min-width: 300px;
-    margin: 20px;
-  }
-}
-
-/* 第四步：拓扑图生成样式 */
-.topology-generation {
-  padding: 20px 0;
-}
-
-.config-summary {
-  background: #f8fafc;
-  padding: 20px;
-  border-radius: 12px;
-  margin-bottom: 30px;
-  border: 1px solid #e2e8f0;
-}
-
-.config-summary h4 {
-  margin: 0 0 16px 0;
-  color: #334155;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.summary-grid {
-  display: grid;
-  gap: 16px;
-}
-
-.summary-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.summary-label {
-  font-weight: 600;
-  color: #475569;
-  min-width: 100px;
-}
-
-.summary-value {
-  color: #1e293b;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.zone-tag {
-  background: #e0f2fe;
-  color: #0369a1;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.node-count {
-  background: #0369a1;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-size: 0.75rem;
-}
-
-.generation-area {
-  background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 40px;
-  text-align: center;
-  min-height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 未开始生成状态 */
-.generation-idle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.idle-icon {
-  font-size: 4rem;
-  margin-bottom: 10px;
-}
-
-.generation-idle h4 {
-  color: #1e293b;
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.generation-idle p {
-  color: #64748b;
-  font-size: 1rem;
-  margin: 0;
-}
-
-.generate-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white;
-  border: none;
-  padding: 16px 32px;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.generate-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
-}
-
-.debug-btn {
-  background: linear-gradient(135deg, #ffa726 0%, #ff7043 100%);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 10px rgba(255, 167, 38, 0.3);
-}
-
-.debug-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(255, 167, 38, 0.5);
-}
-
-.button-group {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-/* 处理中状态 */
-.generation-processing {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.processing-animation {
-  margin-bottom: 20px;
-}
-
-.spinner {
-  width: 60px;
-  height: 60px;
-  border: 4px solid #e2e8f0;
-  border-top: 4px solid #3b82f6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.generation-processing h4 {
-  color: #1e293b;
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.generation-processing p {
-  color: #64748b;
-  margin: 0;
-}
-
-.progress-bar {
-  width: 300px;
-  height: 8px;
-  background: #e2e8f0;
-  border-radius: 4px;
-  overflow: hidden;
-  margin: 20px 0 10px 0;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
-  border-radius: 4px;
-  transition: width 0.5s ease;
-}
-
-.progress-text {
-  color: #3b82f6;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-/* 渲染中状态 */
-.generation-rendering {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.rendering-animation {
-  margin-bottom: 20px;
-}
-
-.pulse-circle {
-  width: 60px;
-  height: 60px;
-  background: #3b82f6;
-  border-radius: 50%;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0.8);
-    opacity: 0.5;
-  }
-}
-
-.generation-rendering h4 {
-  color: #1e293b;
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.generation-rendering p {
-  color: #64748b;
-  margin: 0;
-}
-
-.dots-loading {
-  display: flex;
-  gap: 8px;
-  margin-top: 20px;
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  background: #3b82f6;
-  border-radius: 50%;
-  animation: dotPulse 1.4s ease-in-out infinite both;
-}
-
-.dot:nth-child(1) { animation-delay: -0.32s; }
-.dot:nth-child(2) { animation-delay: -0.16s; }
-.dot:nth-child(3) { animation-delay: 0s; }
-
-@keyframes dotPulse {
-  0%, 80%, 100% {
-    transform: scale(0);
-    opacity: 0.5;
-  }
-  40% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* 完成状态 */
-.generation-completed {
-  width: 100%;
-}
-
-.topology-result h4 {
-  color: #059669;
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin: 0 0 30px 0;
-}
-
-.topology-image-container {
-  background: #f8fafc;
-  border: 2px dashed #cbd5e1;
-  border-radius: 12px;
-  padding: 20px;
-  margin: 20px 0;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-.topology-image {
-  max-width: 100%;
-  max-height: 500px;
-  object-fit: contain;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.result-actions {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  margin-top: 30px;
-}
-
-.action-btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.download-btn {
-  background: #059669;
-  color: white;
-}
-
-.download-btn:hover {
-  background: #047857;
-  transform: translateY(-1px);
-}
-
-.regenerate-btn {
-  background: #6366f1;
-  color: white;
-}
-
-.regenerate-btn:hover {
-  background: #4f46e5;
-  transform: translateY(-1px);
-}
-
-/* 失败状态 */
-.generation-failed {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.error-icon {
-  font-size: 4rem;
-  margin-bottom: 10px;
-}
-
-.generation-failed h4 {
-  color: #dc2626;
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.error-message {
-  color: #64748b;
-  margin: 0;
-  max-width: 400px;
-}
-
-.retry-btn {
-  background: #dc2626;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.retry-btn:hover {
-  background: #b91c1c;
-  transform: translateY(-1px);
 }
 </style>
