@@ -437,7 +437,7 @@
           <button 
             class="nav-btn next-btn" 
             @click="nextStep"
-            :disabled="!canProceedStep3"
+            :disabled="!canProceed"
           >
             下一步 →
           </button>
@@ -469,7 +469,7 @@
               <div class="summary-item">
                 <div class="summary-label">网络分区:</div>
                 <div class="summary-value">
-                  <span v-for="(config, zone) in networkConfig" :key="zone" v-if="config.subnet && config.devices.length > 0" class="zone-tag">
+                  <span v-for="(config, zone) in networkConfig" :key="zone" v-if="config && config.subnet && config.devices.length > 0" class="zone-tag">
                     {{ getZoneName(zone) }}
                     <span class="node-count">({{ config.devices.length }}个设备)</span>
                   </span>
@@ -677,10 +677,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineComponent, watch, onMounted } from 'vue'
+import { ref, computed, defineComponent, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { createQuestion, type CreateQuestionRequest } from '@/api/question'
-import { getAllTags, type Tag } from '@/api/tag'
+// import { getAllTags, type Tag } from '@/api/tag' // 已注释，使用硬编码数据
+
+// 定义Tag类型
+interface Tag {
+  tag_id: number;
+  tag: string;
+}
 import { 
   inputScenario, 
   inputDevices,
@@ -850,43 +856,37 @@ const DeviceConfigDialog = defineComponent({
     const ip = ref('')
     const image = ref('')
     
-    // 设备类型选项
+    // 设备类型选项（严格按照图2）
     const deviceTypeOptions = [
-      'Web服务器', '数据库服务器', '应用服务器', 
-      '邮件服务器', 'DNS服务器', '代理服务器',
-      '防火墙', '路由器', '交换机',
-      '攻击机', '靶机', '跳板机'
+      'Web服务器',
+      '数据库服务器', 
+      'ftp服务器',
+      'Ad域控',
+      '攻击机'
     ]
     
-    // 系统选项（根据设备类型动态变化）
+    // 系统选项（严格按照图2格式）
     const systemOptions = {
-      'Web服务器': ['Apache+PHP', 'Nginx+PHP', 'IIS+ASP.NET', 'Tomcat+Java', 'Apache+Python'],
-      '数据库服务器': ['MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Oracle', 'SQL Server'],
-      '应用服务器': ['Tomcat', 'JBoss', 'WebLogic', 'WebSphere', 'Node.js'],
-      '邮件服务器': ['Postfix', 'Sendmail', 'Exchange', 'Dovecot'],
-      'DNS服务器': ['BIND', 'PowerDNS', 'Unbound', 'dnsmasq'],
-      '代理服务器': ['Squid', 'Nginx Proxy', 'HAProxy', 'Apache Proxy'],
-      '防火墙': ['iptables', 'pfSense', 'Cisco ASA', 'Fortinet'],
-      '路由器': ['Cisco IOS', 'Quagga', 'BIRD', 'OpenWrt'],
-      '交换机': ['Cisco Catalyst', 'Open vSwitch', 'Linux Bridge'],
-      '攻击机': ['Kali Linux', 'ParrotOS', 'BlackArch', 'Pentoo'],
-      '靶机': ['Metasploitable', 'DVWA', 'WebGoat', 'VulnHub'],
-      '跳板机': ['Ubuntu', 'CentOS', 'Windows Server', 'OpenSSH']
+      'Web服务器': ['apache+php', 'apache+python', 'apache+java'],
+      '数据库服务器': ['mysql','oceanbase','MongoDB'],
+      'ftp服务器': ['FTP','Pure-FTPd'],
+      'Ad域控': ['Linux', 'windows'],
+      '攻击机': ['kali', 'windows']
     }
     
-    // 镜像选项（根据系统动态变化）
+    // 镜像选项（严格按照图2格式）
     const imageOptions = {
-      'Apache+PHP': ['httpd:2.4-php', 'php:7.4-apache', 'php:8.0-apache'],
-      'Nginx+PHP': ['nginx:alpine-php', 'php:7.4-fpm-nginx', 'php:8.0-fpm-nginx'],
-      'IIS+ASP.NET': ['mcr.microsoft.com/dotnet/framework/aspnet:4.8', 'mcr.microsoft.com/dotnet/aspnet:5.0'],
-      'MySQL': ['mysql:8.0', 'mysql:5.7', 'percona:8.0'],
-      'PostgreSQL': ['postgres:13', 'postgres:12', 'postgis/postgis:13-3.1'],
-      'MongoDB': ['mongo:4.4', 'mongo:5.0', 'mongo:latest'],
-      'Redis': ['redis:6.2', 'redis:alpine', 'redis:latest'],
-      'Kali Linux': ['kalilinux/kali-rolling', 'kalilinux/kali-linux-docker'],
-      'Ubuntu': ['ubuntu:20.04', 'ubuntu:18.04', 'ubuntu:latest'],
-      'CentOS': ['centos:8', 'centos:7', 'rockylinux:8'],
-      'Windows Server': ['mcr.microsoft.com/windows/servercore:ltsc2019', 'mcr.microsoft.com/windows/server:ltsc2022']
+      'apache+php': ['apache:php'],
+      'apache+python': ['apache:python'],
+      'apache+java': ['apache:java'],
+      'mysql': ['mysql:latest'],
+      'oceanbase': ['oceanbase:latest'],
+      'MongoDB': ['mangodb'],
+      'FTP': ['fauria/vsftpd'],
+      'Pure-FTPd': ['stilliard/pure-ftpd'],
+      'Linux': ['dperson/samba'],
+      'windows': ['windows:ad'],
+      'kali': ['Kalilinux/kali-rolling']
     }
     
     // 监听device prop变化，更新表单数据
@@ -1060,23 +1060,29 @@ const NodeConfigDialog = defineComponent({
       '数据库服务器', 
       'ftp服务器',
       'Ad域控',
-      '攻击机kali'
+      '攻击机'
     ]
     
     const systemOptions = {
-      'Web服务器': ['apache+php', 'apache+python', 'apache+java', 'nginx+php', 'nginx+python', 'iis+asp'],
-      '数据库服务器': ['MySQL', 'PostgreSQL', 'MongoDB', 'SQLServer', 'Oracle', 'Redis'],
-      'ftp服务器': ['vsftpd', 'proftpd', 'pureftpd', 'filezilla'],
-      'Ad域控': ['Windows Server 2019', 'Windows Server 2016', 'Windows Server 2012'],
-      '攻击机kali': ['kali', 'parrot', 'blackarch', 'pentoo']
+      'Web服务器': ['apache+php', 'apache+python', 'apache+java'],
+      '数据库服务器': ['mysql','oceanbase','MongoDB'],
+      'ftp服务器': ['FTP','Pure-FTPd'],
+      'Ad域控': ['Linux', 'windows'],
+      '攻击机': ['kali', 'windows']
     }
     
     const imageOptions = {
-      'Web服务器': ['apache:php', 'nginx:php', 'tomcat:latest', 'httpd:latest'],
-      '数据库服务器': ['mysql:latest', 'postgres:latest', 'mongo:latest', 'redis:latest'],
-      'ftp服务器': ['fauria/vsftpd', 'stilliard/pure-ftpd', 'delfer/alpine-ftp-server'],
-      'Ad域控': ['mcr.microsoft.com/windows/servercore', 'microsoft/windowsservercore'],
-      '攻击机kali': ['kalilinux/kali-rolling', 'parrotsec/security', 'blackarchlinux/blackarch']
+      'apache+php': ['apache:php'],
+      'apache+python': ['apache:python'],
+      'apache+java': ['apache:java'],
+      'mysql': ['mysql:latest'],
+      'oceanbase': ['oceanbase:latest'],
+      'MongoDB': ['mangodb'],
+      'FTP': ['fauria/vsftpd'],
+      'Pure-FTPd': ['stilliard/pure-ftpd'],
+      'Linux': ['dperson/samba'],
+      'windows': ['windows:ad'],
+      'kali': ['Kalilinux/kali-rolling']
     }
     
     const validateIP = (ip) => {
@@ -1117,13 +1123,17 @@ const NodeConfigDialog = defineComponent({
       image.value = 'apache:php'
     }
     
-    // 当节点类型改变时，自动更新系统和镜像选项
+    // 当节点类型改变时，自动更新系统选项
     const updateSystemOptions = () => {
       const systems = systemOptions[nodeType.value]
       if (systems && systems.length > 0) {
         system.value = systems[0]
       }
-      const images = imageOptions[nodeType.value]
+    }
+    
+    // 当系统改变时，自动更新镜像选项
+    const updateImageOptions = () => {
+      const images = imageOptions[system.value]
       if (images && images.length > 0) {
         image.value = images[0]
       }
@@ -1131,6 +1141,9 @@ const NodeConfigDialog = defineComponent({
     
     // 监听节点类型变化
     watch(nodeType, updateSystemOptions)
+    
+    // 监听系统变化
+    watch(system, updateImageOptions)
     
     return { 
       nodeType, 
@@ -1176,7 +1189,7 @@ const NodeConfigDialog = defineComponent({
         <div class="form-group">
           <label>镜像:</label>
           <select v-model="image" class="form-select">
-            <option v-for="img in imageOptions[nodeType]" :key="img" :value="img">
+            <option v-for="img in imageOptions[system] || []" :key="img" :value="img">
               {{ img }}
             </option>
           </select>
@@ -1250,42 +1263,19 @@ const topology = ref({
   attack: []       // 攻击区节点
 })
 
-// 标签选项数据
-const tagOptions = ref<Tag[]>([])
+// 标签选项数据（硬编码）
+const tagOptions = ref<Tag[]>([
+  { tag_id: 1, tag: '电子数据取证' },
+  { tag_id: 2, tag: '渗透测试' },
+  { tag_id: 3, tag: '系统安全' },
+  { tag_id: 4, tag: '密码技术与应用' },
+  { tag_id: 5, tag: '恶意软件分析' }
+])
 
-// 获取标签列表
-const fetchTags = async () => {
-  try {
-    const response = await getAllTags()
-    if (response && response.code === 200 && response.data) {
-      tagOptions.value = response.data
-    } else {
-      // 如果API失败，使用默认标签
-      tagOptions.value = [
-        { tag_id: 1, tag: '电子数据取证' },
-        { tag_id: 2, tag: '渗透测试' },
-        { tag_id: 3, tag: '系统安全' },
-        { tag_id: 4, tag: '密码技术与应用' },
-        { tag_id: 5, tag: '恶意软件分析' }
-      ]
-    }
-  } catch (error) {
-    console.error('获取标签列表失败:', error)
-    // 使用默认标签作为后备
-    tagOptions.value = [
-      { tag_id: 1, tag: '电子数据取证' },
-      { tag_id: 2, tag: '渗透测试' },
-      { tag_id: 3, tag: '系统安全' },
-      { tag_id: 4, tag: '密码技术与应用' },
-      { tag_id: 5, tag: '恶意软件分析' }
-    ]
-  }
-}
-
-// 页面加载时获取标签列表
-onMounted(() => {
-  fetchTags()
-})
+// 页面加载时的钩子（已移除标签API调用）
+// onMounted(() => {
+//   fetchTags()
+// })
 
 // 添加调试函数
 const logTopology = () => {
@@ -1341,8 +1331,12 @@ const canProceed = computed(() => {
     return formData.value.requirements.trim() !== ''
   }
   if (currentStep.value === 3) {
-    // 第三步需要至少有一个配置好的节点（包括嵌套的子节点）
-    return getAllConfiguredNodes().length > 0
+    // 第三步使用新的网络配置验证逻辑
+    const zones = ['internal', 'dmz', 'attack']
+    return zones.some(zone => {
+      const config = networkConfig.value[zone]
+      return config.subnet.trim() !== '' && config.devices.length > 0
+    })
   }
   return true
 })
@@ -1958,7 +1952,7 @@ const convertZoneToDevices = (nodes: any[], zone: string, defaultSubnet: string)
           machine_type: node.nodeType || 'Web服务器',
           system: node.system || 'apache+php',
           ip_address: node.ip || '自动分配',
-          image: node.image || 'apache+php'
+          image: node.image || 'apache:php'
         }
         targetMachines.push(machine)
       }
@@ -3823,5 +3817,141 @@ const findNodeById = (nodes, targetId) => {
 
 .btn-icon {
   font-size: 0.8rem;
+}
+
+/* 弹窗蒙版样式优化 */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: overlayFadeIn 0.3s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* 通用弹窗内容样式 */
+.dialog-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: dialogSlideIn 0.3s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dialog-content h3 {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  margin: 0;
+  padding: 20px 24px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dialog-content .form-group {
+  margin-bottom: 16px;
+  padding: 0 24px;
+}
+
+.dialog-content .form-group:first-of-type {
+  margin-top: 20px;
+}
+
+.dialog-content label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.dialog-content .form-input,
+.dialog-content .form-select {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: white;
+  box-sizing: border-box;
+}
+
+.dialog-content .form-input:focus,
+.dialog-content .form-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* 配置对话框特定样式 */
+.config-dialog {
+  max-width: 600px;
+}
+
+.config-dialog .form-group {
+  display: flex;
+  flex-direction: column;
 }
 </style>
