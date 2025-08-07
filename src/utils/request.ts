@@ -134,7 +134,7 @@ class Request {
 
 export default new Request({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 300000, // 5分钟超时，适应后端长时间处理
   headers: {
     'Content-Type': 'application/json'
   }

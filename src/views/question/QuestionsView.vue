@@ -203,7 +203,7 @@ const fetchAllQuestions = async () => {
     // 获取第一页来了解总数
     const firstPageResponse = await getQuestionList({ page: 1, page_size: 100 });
     
-    if (firstPageResponse.code === 200) {
+    if (firstPageResponse?.code === 200 && firstPageResponse.data?.items) {
       // 清理数据格式
       allQuestions.value = cleanQuestionData(firstPageResponse.data.items);
       applyFiltersAndPagination();

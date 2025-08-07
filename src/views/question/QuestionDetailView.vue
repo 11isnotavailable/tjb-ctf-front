@@ -542,7 +542,7 @@ const startEnvironment = async () => {
 
   try {
     const response = await startContainer({ question_id: questionId.value });
-    if (response.data?.container) {
+    if (response?.data?.container) {
       container.value = response.data.container;
     } else {
       throw new Error('启动容器失败：服务器返回数据异常');
@@ -608,7 +608,7 @@ const restartEnvironment = async () => {
 
   try {
     const response = await refreshContainer(container.value.docker_id);
-    if (response.data?.container) {
+    if (response?.data?.container) {
       container.value = response.data.container;
     } else {
       throw new Error('重启容器失败：服务器返回数据异常');
@@ -675,7 +675,7 @@ const submitFlag = async () => {
       provided: submitForm.value.flag.trim()
     });
 
-    if (response.data?.correction) {
+    if (response?.data?.correction) {
       ElMessage.success(`🎉 恭喜！Flag正确！${response.data.rank ? `您是第 ${response.data.rank} 个解出此题的人！` : ''}`);
 
       if (question.value) {

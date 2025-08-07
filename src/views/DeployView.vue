@@ -14,9 +14,14 @@
             <div class="step-label">需求输入</div>
           </div>
           <div class="progress-line" :class="{ completed: currentStep > 2 }"></div>
-          <div class="progress-step" :class="{ active: currentStep >= 3 }">
+          <div class="progress-step" :class="{ active: currentStep >= 3, completed: currentStep > 3 }">
             <div class="step-number">3</div>
             <div class="step-label">网络拓扑</div>
+          </div>
+          <div class="progress-line" :class="{ completed: currentStep > 3 }"></div>
+          <div class="progress-step" :class="{ active: currentStep >= 4 }">
+            <div class="step-number">4</div>
+            <div class="step-label">拓扑生成</div>
           </div>
         </div>
       </div>
@@ -275,21 +280,163 @@
           </div>
         </div>
         
+        <!-- 调试信息 -->
+        <div style="margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 12px; color: #666;">
+          <strong>调试信息:</strong><br>
+          canProceed: {{ canProceed }}<br>
+          已配置节点数: {{ getAllConfiguredNodes().length }}<br>
+          <button @click="logTopology" style="font-size: 11px; margin: 5px 0; padding: 2px 8px;">打印拓扑到控制台</button>
+        </div>
+        
         <!-- 导航按钮 -->
         <div class="card-footer">
           <button 
-            v-if="currentStep > 1" 
             class="nav-btn prev-btn" 
             @click="prevStep"
           >
             ← 上一步
           </button>
           <button 
-            class="nav-btn submit-btn" 
-            @click="submitForm"
-            :disabled="!canSubmit"
+            class="nav-btn next-btn" 
+            @click="nextStep"
+            :disabled="!canProceed"
           >
-            生成题目 🚀
+            下一步 →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 第四步：生成拓扑图 -->
+    <div v-if="currentStep === 4" class="step-content">
+      <div class="form-card">
+        <div class="form-header">
+          <h3>🎨 生成拓扑图</h3>
+          <p>基于您的网络配置生成可视化拓扑图</p>
+        </div>
+        
+        <div class="topology-generation">
+          <!-- 配置摘要 -->
+          <div class="config-summary">
+            <h4>📋 配置摘要</h4>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <div class="summary-label">题目名称:</div>
+                <div class="summary-value">{{ formData.title }}</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-label">难度等级:</div>
+                <div class="summary-value">{{ getDifficultyText(formData.difficulty) }}</div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-label">网络分区:</div>
+                <div class="summary-value">
+                  <span v-for="(nodes, zone) in topology" :key="zone" class="zone-tag">
+                    {{ getZoneName(zone) }}
+                    <span class="node-count">({{ getConfiguredNodeCount(nodes) }}个节点)</span>
+                  </span>
+                </div>
+              </div>
+              <div class="summary-item">
+                <div class="summary-label">部署ID:</div>
+                <div class="summary-value">{{ deployId || '未设置' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 生成状态区域 -->
+          <div class="generation-area">
+            <!-- 未开始生成状态 -->
+            <div v-if="generationState === 'idle'" class="generation-idle">
+              <div class="idle-icon">🎯</div>
+              <h4>准备生成拓扑图</h4>
+              <p>点击下方按钮开始生成您的网络拓扑图</p>
+              <div class="button-group">
+                <button class="generate-btn" @click="startTopologyGeneration">
+                  🚀 立即生成拓扑图
+                </button>
+                <button class="debug-btn" @click="checkDeployStatus" style="margin-left: 10px;">
+                  🔍 检查状态
+                </button>
+              </div>
+              <div style="margin-top: 15px;">
+                <button @click="logDevicesData" style="font-size: 12px; padding: 5px 10px; background: #e6f7ff; border: 1px solid #91d5ff; border-radius: 4px; color: #1890ff;">
+                  🔍 预览设备数据
+                </button>
+              </div>
+            </div>
+
+            <!-- 第一阶段：配置处理中 -->
+            <div v-if="generationState === 'processing'" class="generation-processing">
+              <div class="processing-animation">
+                <div class="spinner"></div>
+              </div>
+              <h4>⚙️ 正在处理网络配置</h4>
+              <p>AI正在分析您的网络架构，预计需要1-2分钟...</p>
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: processingProgress + '%' }"></div>
+              </div>
+              <div class="progress-text">{{ processingProgress }}% 完成</div>
+            </div>
+
+            <!-- 第二阶段：图片生成中 -->
+            <div v-if="generationState === 'rendering'" class="generation-rendering">
+              <div class="rendering-animation">
+                <div class="pulse-circle"></div>
+              </div>
+              <h4>🎨 正在生成拓扑图</h4>
+              <p>正在渲染可视化图表，即将完成...</p>
+              <div class="dots-loading">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </div>
+            </div>
+
+            <!-- 生成完成状态 -->
+            <div v-if="generationState === 'completed'" class="generation-completed">
+              <div class="topology-result">
+                <h4>✅ 拓扑图生成完成！</h4>
+                <div class="topology-image-container">
+                  <img :src="generatedTopologyImage" alt="生成的网络拓扑图" class="topology-image" />
+                </div>
+                <div class="result-actions">
+                  <button class="action-btn download-btn" @click="downloadTopology">
+                    📥 下载拓扑图
+                  </button>
+                  <button class="action-btn regenerate-btn" @click="regenerateTopology">
+                    🔄 重新生成
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 生成失败状态 -->
+            <div v-if="generationState === 'failed'" class="generation-failed">
+              <div class="error-icon">❌</div>
+              <h4>生成失败</h4>
+              <p class="error-message">{{ generationError }}</p>
+              <button class="retry-btn" @click="startTopologyGeneration">
+                🔄 重试生成
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 导航按钮 -->
+        <div class="card-footer">
+          <button 
+            class="nav-btn prev-btn" 
+            @click="prevStep"
+          >
+            ← 上一步
+          </button>
+          <button 
+            v-if="generationState === 'completed'"
+            class="nav-btn submit-btn" 
+            @click="finalSubmit"
+          >
+            完成部署 🎉
           </button>
         </div>
       </div>
@@ -314,6 +461,20 @@
 <script setup lang="ts">
 import { ref, computed, defineComponent, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { createQuestion, type CreateQuestionRequest } from '@/api/question'
+import { 
+  inputScenario, 
+  inputDevices,
+  generateTopology,
+  generateTopologyImage,
+  generateDockerCompose,
+  type InputScenarioRequest,
+  type InputDevicesRequest,
+  type GenerateTopologyRequest,
+  type TopologyImageResponse,
+  type DeviceZone,
+  type TargetMachine
+} from '@/api/deploy'
 
 // 拓扑节点组件
 const TopologyNode = defineComponent({
@@ -323,6 +484,10 @@ const TopologyNode = defineComponent({
     zone: String
   },
   emits: ['add-branch', 'configure'],
+  components: {
+    // 递归组件自引用
+    TopologyNode: 'TopologyNode'
+  },
   setup(props) {
     // 调试日志
     console.log('TopologyNode props:', props)
@@ -349,21 +514,24 @@ const TopologyNode = defineComponent({
         <div v-else-if="node.type === 'subnet'" class="node-text">配置子网网段</div>
         <div v-else-if="node.type === 'subnet-configured'" class="node-text">{{ node.subnet || node.label }}</div>
         <div v-else-if="node.type === 'config'" class="node-text">具体配置</div>
-        <div v-else-if="node.type === 'configured'" class="configured-node">
-          <div class="node-type">{{ node.nodeType }}</div>
+        <div v-else-if="node.configured || node.type === 'configured'" class="configured-node">
+          <div class="node-type">{{ node.nodeType || node.type }}</div>
           <div class="node-system">{{ node.system }}</div>
           <div class="node-ip">{{ node.ip }}</div>
         </div>
+        <div v-else class="default-node">
+          <div class="node-type">{{ node.type || '未知' }}</div>
+          <div class="node-details">{{ node.label || node.name || 'Node' }}</div>
+        </div>
       </div>
       
-      <div class="node-connections" v-if="node.children && node.children.length > 0">
-        <div class="connection-line"></div>
-        <div class="child-nodes">
+      <!-- 显示子节点 -->
+      <div v-if="node.children && node.children.length > 0" class="node-connections">
+        <div v-for="child in node.children" :key="child.id" class="child-node">
+          <div class="connection-line"></div>
           <TopologyNode 
-            v-for="child in node.children"
-            :key="child.id"
-            :node="child"
-            :zone="zone"
+            :node="child" 
+            :zone="child.zone || zone"
             @add-branch="$emit('add-branch', $event)"
             @configure="$emit('configure', $event)"
           />
@@ -376,7 +544,7 @@ const TopologyNode = defineComponent({
       console.log('Node clicked:', this.node, 'Zone:', this.zone)
       if (this.node.type === 'add') {
         this.$emit('add-branch', this.node)
-      } else if (this.node.type === 'subnet' || this.node.type === 'config') {
+      } else if (this.node.type === 'subnet' || this.node.type === 'subnet-configured' || this.node.type === 'config') {
         this.$emit('configure', this.node)
       }
     }
@@ -601,6 +769,19 @@ const NodeConfigDialog = defineComponent({
 // 当前步骤
 const currentStep = ref(1)
 
+// 存储创建的题目ID和部署ID
+const questionId = ref<number | null>(null)
+const deployId = ref<number | null>(null)
+
+// 存储设备配置数据，待第四步使用
+const deviceConfigData = ref<any>(null)
+
+// 第四步：拓扑图生成相关状态
+const generationState = ref<'idle' | 'processing' | 'rendering' | 'completed' | 'failed'>('idle')
+const processingProgress = ref(0)
+const generatedTopologyImage = ref('')
+const generationError = ref('')
+
 // 表单数据
 const formData = ref({
   title: '',
@@ -625,6 +806,33 @@ const logTopology = () => {
   console.log('Current topology:', JSON.stringify(topology.value, null, 2))
 }
 
+const logDevicesData = () => {
+  const devices = convertTopologyToDevices()
+  console.log('Converted devices data:', JSON.stringify(devices, null, 2))
+  console.log('Deploy ID:', deployId.value)
+  console.log('Scenario (requirements):', formData.value.requirements)
+  ElMessage.success(`设备数据已打印到控制台，共 ${devices.length} 个区域`)
+}
+
+// 获取所有已配置的节点（包括嵌套的子节点）
+const getAllConfiguredNodes = () => {
+  const findConfiguredNodes = (nodes) => {
+    let configuredNodes = []
+    for (const node of nodes) {
+      if (node.configured === true) {
+        configuredNodes.push(node)
+      }
+      if (node.children && node.children.length > 0) {
+        configuredNodes = configuredNodes.concat(findConfiguredNodes(node.children))
+      }
+    }
+    return configuredNodes
+  }
+  
+  const allZones = [...topology.value.internal, ...topology.value.dmz, ...topology.value.attack]
+  return findConfiguredNodes(allZones)
+}
+
 // 对话框状态
 const showSubnetDialog = ref(false)
 const showNodeDialog = ref(false)
@@ -632,7 +840,7 @@ const currentConfigNode = ref(null)
 const currentSubnetConfig = ref(null)
 
 // 节点ID计数器
-const nodeIdCounter = ref(0)
+const nodeIdCounter = ref(1)
 
 // 计算属性
 const canProceed = computed(() => {
@@ -644,24 +852,164 @@ const canProceed = computed(() => {
   if (currentStep.value === 2) {
     return formData.value.requirements.trim() !== ''
   }
+  if (currentStep.value === 3) {
+    // 第三步需要至少有一个配置好的节点（包括嵌套的子节点）
+    return getAllConfiguredNodes().length > 0
+  }
   return true
 })
 
 const canSubmit = computed(() => {
   if (currentStep.value === 3) {
-    // 第三步需要至少有一个配置好的节点
-    const allNodes = [...topology.value.internal, ...topology.value.dmz, ...topology.value.attack]
-    return allNodes.some(node => node.configured)
+    // 第三步需要至少有一个配置好的节点（包括嵌套的子节点）
+    return getAllConfiguredNodes().length > 0
   }
   return formData.value.requirements.trim() !== ''
 })
 
 // 方法
-const nextStep = () => {
-  if (canProceed.value && currentStep.value < 3) {
+const nextStep = async () => {
+  if (!canProceed.value || currentStep.value > 4) {
+    return
+  }
+
+  try {
+    // 根据当前步骤调用相应的API
+    if (currentStep.value === 1) {
+      // 第一步完成时，创建题目
+      await createQuestionStep()
+    } else if (currentStep.value === 2) {
+      // 第二步完成时，提交scenario数据
+      await submitScenarioStep()
+    } else if (currentStep.value === 3) {
+      // 第三步完成时，收集设备配置数据但不发送
+      await collectDeviceConfigStep()
+    }
+
     currentStep.value++
     ElMessage.success(`进入第${currentStep.value}步`)
+    
+  } catch (error) {
+    console.error('步骤切换失败:', error)
+    ElMessage.error('操作失败，请重试')
   }
+}
+
+// 第一步：创建题目
+const createQuestionStep = async () => {
+  const questionData: CreateQuestionRequest = {
+    title: formData.value.title,
+    introduction: formData.value.description,
+    tag_id: 1, // 默认标签ID，可以根据需要修改
+    is_active: formData.value.enabled,
+    flag_prefix: formData.value.flagTemplate,
+    topology: null, // 初始时拓扑图为空，后续第四步会更新
+    valid_time: formData.value.validTime,
+    star: formData.value.difficulty
+  }
+
+  const response = await createQuestion(questionData)
+  console.log('API Response:', response)
+  console.log('Response data:', response.data)
+  
+  if (response && response.code === 200 && response.data?.question_id) {
+    questionId.value = response.data.question_id
+    deployId.value = response.data.question_id // 使用question_id作为deploy_id
+    ElMessage.success('题目创建成功')
+    console.log('Created question ID:', questionId.value)
+  } else {
+    console.error('API响应不符合预期:', response)
+    throw new Error(response?.message || '题目创建失败')
+  }
+}
+
+// 第二步：提交scenario数据
+const submitScenarioStep = async () => {
+  if (!deployId.value) {
+    throw new Error('缺少部署ID')
+  }
+
+  const scenarioData: InputScenarioRequest = {
+    deploy_id: deployId.value,
+    scenario: formData.value.requirements
+  }
+
+  const response = await inputScenario(scenarioData)
+  console.log('Scenario API Response:', response)
+  if (response.code === 200) {
+    ElMessage.success('背景描述保存成功')
+    console.log('Scenario saved for deploy_id:', deployId.value)
+  } else {
+    console.error('Scenario API响应不符合预期:', response)
+    throw new Error(response.message || '背景描述保存失败')
+  }
+}
+
+// 第三步：收集设备配置数据（不发送，只存储）
+const collectDeviceConfigStep = async () => {
+  if (!deployId.value) {
+    throw new Error('缺少部署ID')
+  }
+
+  // 收集当前拓扑中的所有配置数据
+  const devices = []
+  
+  // 定义网络分区映射
+  const zoneMapping = {
+    'internal': { name: '内网', defaultSubnet: '192.168.1.0/24' },
+    'dmz': { name: 'DMZ', defaultSubnet: '10.0.0.0/24' },
+    'attack': { name: '攻击区', defaultSubnet: '172.16.0.0/24' }
+  }
+  
+  // 遍历所有网络分区
+  for (const [zoneKey, nodes] of Object.entries(topology.value)) {
+    const targetMachines = []
+    let subnet = zoneMapping[zoneKey]?.defaultSubnet || '192.168.1.0/24'
+    
+    // 递归收集所有已配置的节点
+    const collectConfiguredNodes = (nodeList) => {
+      for (const node of nodeList) {
+        if (node.configured && node.type === 'configured') {
+          // 如果节点有子网信息，使用它
+          if (node.subnet) {
+            subnet = node.subnet
+          }
+          
+          targetMachines.push({
+            machine_type: node.nodeType || node.type,
+            system: node.system || 'Unknown',
+            ip_address: node.ip || `${subnet.split('/')[0].split('.').slice(0, 3).join('.')}.${10 + targetMachines.length}`,
+            image: node.image || 'default:latest'
+          })
+        }
+        
+        // 递归处理子节点
+        if (node.children && node.children.length > 0) {
+          collectConfiguredNodes(node.children)
+        }
+      }
+    }
+    
+    collectConfiguredNodes(nodes)
+    
+    // 如果该分区有配置的机器，则添加到devices中
+    if (targetMachines.length > 0) {
+      devices.push({
+        zone: zoneMapping[zoneKey]?.name || zoneKey,
+        subnet: subnet,
+        target_machines: targetMachines
+      })
+    }
+  }
+  
+  // 构建完整的设备配置数据
+  deviceConfigData.value = {
+    deploy_id: deployId.value,
+    devices: devices
+  }
+  
+  console.log('设备配置数据已收集:', deviceConfigData.value)
+  ElMessage.success('设备配置已保存，准备进入最终步骤')
 }
 
 const prevStep = () => {
@@ -700,6 +1048,366 @@ const formatTime = (seconds) => {
   } else {
     return `${Math.floor(seconds / 86400)}天`
   }
+}
+
+// 第四步相关辅助函数
+const getZoneName = (zone) => {
+  const zoneNames = {
+    'internal': '内网',
+    'dmz': 'DMZ',
+    'attack': '攻击区'
+  }
+  return zoneNames[zone] || zone
+}
+
+const getConfiguredNodeCount = (nodes) => {
+  let count = 0
+  const countNodes = (nodeList) => {
+    for (const node of nodeList) {
+      if (node.configured && node.type === 'configured') {
+        count++
+      }
+      if (node.children && node.children.length > 0) {
+        countNodes(node.children)
+      }
+    }
+  }
+  countNodes(nodes)
+  return count
+}
+
+// 拓扑图生成相关方法
+const startTopologyGeneration = async () => {
+  try {
+    // 重置状态
+    generationState.value = 'processing'
+    processingProgress.value = 0
+    generationError.value = ''
+    
+    ElMessage.info('开始生成拓扑图，整个过程可能需要1-3分钟，请耐心等待...')
+    
+    // 添加详细的调试信息
+    console.log('=== 拓扑生成流程开始 ===')
+    console.log('当前deployId:', deployId.value)
+    console.log('当前拓扑数据:', JSON.stringify(topology.value, null, 2))
+    
+    // 第一步：发送场景描述 (20%) - 快速完成
+    console.log('步骤1: 发送场景描述...')
+    await sendScenarioDescription()
+    processingProgress.value = 20
+    console.log('步骤1: 场景描述发送成功')
+    
+    // 第二步：发送设备信息 (40%) - 快速完成
+    console.log('步骤2: 发送设备信息...')
+    await sendDevicesInfo()
+    processingProgress.value = 40
+    console.log('步骤2: 设备信息发送成功')
+    
+    // 第三步：生成拓扑序列 (70%) - 耗时1-2分钟，AI分析需求
+    console.log('步骤3: 生成拓扑序列...')
+    await generateTopologySequence()
+    processingProgress.value = 70
+    console.log('步骤3: 拓扑序列生成成功')
+    
+    // 切换到渲染阶段
+    generationState.value = 'rendering'
+    
+    // 第四步：生成拓扑图像 (100%) - 耗时10-30秒，图像渲染
+    const imageResult = await generateTopologyImageFile()
+    processingProgress.value = 100
+    
+    // 完成
+    generationState.value = 'completed'
+    generatedTopologyImage.value = imageResult.topology_url
+    ElMessage.success('拓扑图生成完成！')
+    
+  } catch (error: any) {
+    console.error('=== 拓扑图生成失败 ===')
+    console.error('错误详情:', error)
+    console.error('当前deployId:', deployId.value)
+    console.error('当前步骤进度:', processingProgress.value)
+    
+    // 提供更具体的错误信息
+    let errorMessage = '生成拓扑图时发生未知错误'
+    if (error.message) {
+      errorMessage = error.message
+    }
+    
+    // 根据HTTP状态码提供更友好的错误信息
+    if (error.response) {
+      const status = error.response.status
+      console.error('HTTP状态码:', status)
+      console.error('响应数据:', error.response.data)
+      
+      if (status === 404) {
+        errorMessage = '后端服务未找到对应的部署记录，请检查deployId是否正确'
+      } else if (status === 500) {
+        errorMessage = '后端服务器错误，请稍后重试或联系管理员'
+      } else if (status === 403) {
+        errorMessage = '权限不足，请检查登录状态'
+      }
+    }
+    
+    generationState.value = 'failed'
+    generationError.value = errorMessage
+    ElMessage.error('拓扑图生成失败: ' + errorMessage)
+  }
+}
+
+// 发送场景描述
+const sendScenarioDescription = async () => {
+  if (!deployId.value) {
+    throw new Error('部署ID不存在')
+  }
+  
+  const scenarioData: InputScenarioRequest = {
+    deploy_id: deployId.value,
+    scenario: formData.value.requirements
+  }
+  
+  console.log('发送场景描述:', scenarioData)
+  const response = await inputScenario(scenarioData)
+  console.log('场景描述响应:', response)
+  
+  // 检查响应是否存在且包含正确的结构
+  if (!response || response.code !== 200) {
+    throw new Error(response?.message || '发送场景描述失败')
+  }
+  
+  console.log('场景描述发送成功')
+}
+
+// 发送设备信息
+const sendDevicesInfo = async () => {
+  if (!deployId.value) {
+    throw new Error('部署ID不存在')
+  }
+  
+  // 将拓扑数据转换为API所需的格式
+  const devices: DeviceZone[] = convertTopologyToDevices()
+  
+  const devicesData: InputDevicesRequest = {
+    deploy_id: deployId.value,
+    devices: devices
+  }
+  
+  console.log('发送设备信息:', devicesData)
+  const response = await inputDevices(devicesData)
+  console.log('设备信息响应:', response)
+  
+  if (!response || response.code !== 200) {
+    throw new Error(response?.message || '发送设备信息失败')
+  }
+  
+  console.log('设备信息发送成功')
+}
+
+// 生成拓扑序列
+const generateTopologySequence = async () => {
+  if (!deployId.value) {
+    throw new Error('部署ID不存在')
+  }
+  
+  const topologyData: GenerateTopologyRequest = {
+    deploy_id: deployId.value
+  }
+  
+  console.log('开始生成拓扑序列，Deploy ID:', deployId.value)
+  console.log('发送的数据:', topologyData)
+  
+  try {
+    const response = await generateTopology(topologyData)
+    console.log('拓扑序列生成响应:', response)
+    
+    if (!response || response.code !== 200) {
+      console.error('拓扑序列生成失败，响应码:', response?.code)
+      console.error('错误消息:', response?.message)
+      throw new Error(response?.message || '生成拓扑序列失败')
+    }
+    
+    console.log('拓扑序列生成成功')
+  } catch (error: any) {
+    console.error('调用生成拓扑序列API时发生错误:', error)
+    
+    // 如果是网络错误或HTTP错误，提供更详细的信息
+    if (error.response) {
+      const status = error.response.status
+      const data = error.response.data
+      console.error('HTTP错误状态:', status)
+      console.error('错误响应数据:', data)
+      
+      if (status === 404) {
+        throw new Error(`部署记录不存在 (ID: ${deployId.value})，请确认数据是否正确保存`)
+      } else if (status === 500) {
+        throw new Error(`服务器内部错误: ${data?.detail || '未知错误'}`)
+      } else {
+        throw new Error(`HTTP ${status}: ${data?.detail || data?.message || error.message}`)
+      }
+    } else if (error.request) {
+      throw new Error('网络连接失败，请检查网络状态')
+    } else {
+      throw error
+    }
+  }
+}
+
+// 生成拓扑图像
+const generateTopologyImageFile = async (): Promise<TopologyImageResponse> => {
+  if (!deployId.value) {
+    throw new Error('部署ID不存在')
+  }
+  
+  const imageData: GenerateTopologyRequest = {
+    deploy_id: deployId.value
+  }
+  
+  console.log('开始生成拓扑图像，Deploy ID:', deployId.value)
+  const response = await generateTopologyImage(imageData)
+  console.log('拓扑图像生成响应:', response)
+  
+  if (!response || response.code !== 200 || !response.data) {
+    console.error('拓扑图像生成失败，响应:', response)
+    throw new Error(response?.message || '生成拓扑图像失败')
+  }
+  
+  console.log('拓扑图像生成成功，URL:', response.data.topology_url)
+  return response.data
+}
+
+// 将拓扑数据转换为API所需的设备格式
+const convertTopologyToDevices = (): DeviceZone[] => {
+  const devices: DeviceZone[] = []
+  
+  // 处理内网区域
+  if (topology.value.internal.length > 0) {
+    const internalDevices = convertZoneToDevices(topology.value.internal, 'internal', '192.168.2.0/24')
+    if (internalDevices) devices.push(internalDevices)
+  }
+  
+  // 处理DMZ区域
+  if (topology.value.dmz.length > 0) {
+    const dmzDevices = convertZoneToDevices(topology.value.dmz, 'dmz', '192.168.1.0/24')
+    if (dmzDevices) devices.push(dmzDevices)
+  }
+  
+  // 处理攻击区域
+  if (topology.value.attack.length > 0) {
+    const attackDevices = convertZoneToDevices(topology.value.attack, 'attack', '192.168.100.0/24')
+    if (attackDevices) devices.push(attackDevices)
+  }
+  
+  return devices
+}
+
+// 将单个区域的节点转换为设备信息
+const convertZoneToDevices = (nodes: any[], zone: string, defaultSubnet: string): DeviceZone | null => {
+  const targetMachines: TargetMachine[] = []
+  
+  const processNodes = (nodeList: any[]) => {
+    for (const node of nodeList) {
+      if (node.configured && node.type === 'configured') {
+        const machine: TargetMachine = {
+          machine_type: node.nodeType || 'Web服务器',
+          system: node.system || 'apache+php',
+          ip_address: node.ip || '自动分配',
+          image: node.image || 'apache+php'
+        }
+        targetMachines.push(machine)
+      }
+      
+      // 递归处理子节点
+      if (node.children && node.children.length > 0) {
+        processNodes(node.children)
+      }
+    }
+  }
+  
+  processNodes(nodes)
+  
+  if (targetMachines.length === 0) {
+    return null
+  }
+  
+  const zoneNames = {
+    'internal': '内网区',
+    'dmz': 'DMZ区', 
+    'attack': '攻击区'
+  }
+  
+  return {
+    zone: zoneNames[zone as keyof typeof zoneNames] || zone,
+    subnet: defaultSubnet,
+    target_machines: targetMachines
+  }
+}
+
+const downloadTopology = () => {
+  if (!generatedTopologyImage.value) {
+    ElMessage.error('没有可下载的拓扑图')
+    return
+  }
+  
+  try {
+    // 创建下载链接
+    const link = document.createElement('a')
+    link.href = generatedTopologyImage.value
+    link.download = `topology_${deployId.value || 'generated'}.png`
+    link.target = '_blank'
+    
+    // 触发下载
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    ElMessage.success('拓扑图下载已开始')
+  } catch (error) {
+    console.error('下载失败:', error)
+    ElMessage.error('下载拓扑图失败')
+  }
+}
+
+const regenerateTopology = () => {
+  // 重置状态并重新开始生成
+  generationState.value = 'idle'
+  generatedTopologyImage.value = ''
+  processingProgress.value = 0
+  generationError.value = ''
+  ElMessage.info('准备重新生成拓扑图')
+}
+
+// 检查部署状态的调试函数
+const checkDeployStatus = () => {
+  console.log('=== 部署状态检查 ===')
+  console.log('当前deployId:', deployId.value)
+  console.log('当前questionId:', questionId.value)
+  console.log('题目数据:', JSON.stringify(formData.value, null, 2))
+  console.log('拓扑数据:', JSON.stringify(topology.value, null, 2))
+  
+  // 检查是否有配置的设备
+  const devices = convertTopologyToDevices()
+  console.log('转换后的设备数据:', JSON.stringify(devices, null, 2))
+  
+  if (!deployId.value) {
+    ElMessage.warning('❌ 部署ID不存在，请确保已完成前面的步骤')
+    return
+  }
+  
+  if (devices.length === 0) {
+    ElMessage.warning('❌ 没有配置任何设备，请先配置网络设备')
+    return
+  }
+  
+  if (!formData.value.requirements) {
+    ElMessage.warning('❌ 缺少场景描述，请在第一步中添加需求描述')
+    return
+  }
+  
+  ElMessage.success('✅ 基础检查通过，deployId和设备数据都存在')
+}
+
+const finalSubmit = () => {
+  console.log('最终提交...')
+  ElMessage.success('CTF题目创建完成！')
 }
 
 // 拓扑相关方法
@@ -747,10 +1455,8 @@ const configureNode = (node) => {
   if (node.type === 'subnet' || node.type === 'subnet-configured') {
     showSubnetDialog.value = true
     currentSubnetConfig.value = node
-  } else if (node.type === 'config') {
-    showNodeDialog.value = true
-    currentConfigNode.value = node
-  } else if (node.type === 'configured') {
+  } else if (node.type === 'config' || node.type === 'configured' || node.type === 'add') {
+    // add类型节点也可以配置，配置后会变成configured类型
     showNodeDialog.value = true
     currentConfigNode.value = node
   }
@@ -1404,6 +2110,18 @@ const findNodeById = (nodes, targetId) => {
   border-radius: 4px;
 }
 
+.default-node {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.node-details {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
 /* 节点连接线 - 横向树布局 */
 .topology-node-container {
   position: relative;
@@ -1414,9 +2132,17 @@ const findNodeById = (nodes, targetId) => {
 
 .node-connections {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: flex-start;
-  margin-left: 20px;
+  margin-left: 30px;
+  margin-top: 10px;
+}
+
+.child-node {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
 .connection-line {
@@ -1553,5 +2279,397 @@ const findNodeById = (nodes, targetId) => {
     min-width: 300px;
     margin: 20px;
   }
+}
+
+/* 第四步：拓扑图生成样式 */
+.topology-generation {
+  padding: 20px 0;
+}
+
+.config-summary {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  border: 1px solid #e2e8f0;
+}
+
+.config-summary h4 {
+  margin: 0 0 16px 0;
+  color: #334155;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.summary-label {
+  font-weight: 600;
+  color: #475569;
+  min-width: 100px;
+}
+
+.summary-value {
+  color: #1e293b;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.zone-tag {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.node-count {
+  background: #0369a1;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+
+.generation-area {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 未开始生成状态 */
+.generation-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.idle-icon {
+  font-size: 4rem;
+  margin-bottom: 10px;
+}
+
+.generation-idle h4 {
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.generation-idle p {
+  color: #64748b;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.generate-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.generate-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.debug-btn {
+  background: linear-gradient(135deg, #ffa726 0%, #ff7043 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(255, 167, 38, 0.3);
+}
+
+.debug-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(255, 167, 38, 0.5);
+}
+
+.button-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* 处理中状态 */
+.generation-processing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.processing-animation {
+  margin-bottom: 20px;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.generation-processing h4 {
+  color: #1e293b;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.generation-processing p {
+  color: #64748b;
+  margin: 0;
+}
+
+.progress-bar {
+  width: 300px;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 20px 0 10px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.progress-text {
+  color: #3b82f6;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* 渲染中状态 */
+.generation-rendering {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.rendering-animation {
+  margin-bottom: 20px;
+}
+
+.pulse-circle {
+  width: 60px;
+  height: 60px;
+  background: #3b82f6;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+}
+
+.generation-rendering h4 {
+  color: #1e293b;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.generation-rendering p {
+  color: #64748b;
+  margin: 0;
+}
+
+.dots-loading {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background: #3b82f6;
+  border-radius: 50%;
+  animation: dotPulse 1.4s ease-in-out infinite both;
+}
+
+.dot:nth-child(1) { animation-delay: -0.32s; }
+.dot:nth-child(2) { animation-delay: -0.16s; }
+.dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes dotPulse {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 完成状态 */
+.generation-completed {
+  width: 100%;
+}
+
+.topology-result h4 {
+  color: #059669;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 30px 0;
+}
+
+.topology-image-container {
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.topology-image {
+  max-width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.result-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.action-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.download-btn {
+  background: #059669;
+  color: white;
+}
+
+.download-btn:hover {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+.regenerate-btn {
+  background: #6366f1;
+  color: white;
+}
+
+.regenerate-btn:hover {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
+/* 失败状态 */
+.generation-failed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 10px;
+}
+
+.generation-failed h4 {
+  color: #dc2626;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.error-message {
+  color: #64748b;
+  margin: 0;
+  max-width: 400px;
+}
+
+.retry-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
 }
 </style>
