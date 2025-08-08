@@ -675,14 +675,14 @@ const submitFlag = async () => {
     });
 
     console.log('提交Flag响应:', response);
+    console.log('response.code:', response?.code);
+    console.log('response.message:', response?.message);
     console.log('response.data:', response?.data);
-    console.log('response.data.code:', response?.data?.code);
-    console.log('response.data.message:', response?.data?.message);
 
-    // 根据实际API响应结构判断flag是否正确
-    // 完整响应格式: { data: { code: 200, message: 'flag正确', data: null }, status: 200 }
-    const responseCode = response?.data?.code;
-    const responseMessage = response?.data?.message;
+    // 修正：响应拦截器已经展平了结构，直接从response读取，不是response.data
+    // 实际响应结构经过拦截器处理后是: { code: 200, message: 'flag正确', data: null }
+    const responseCode = response?.code;
+    const responseMessage = response?.message;
     
     console.log('responseCode类型:', typeof responseCode, '值:', responseCode);
     console.log('responseMessage类型:', typeof responseMessage, '值:', responseMessage);
@@ -699,7 +699,7 @@ const submitFlag = async () => {
     
     if (isCorrect) {
       console.log('进入正确分支');
-      ElMessage.success(`🎉 恭喜！Flag正确！${response.data.data?.rank ? `您是第 ${response.data.data.rank} 个解出此题的人！` : ''}`);
+      ElMessage.success(`🎉 恭喜！Flag正确！${response.data?.rank ? `您是第 ${response.data.rank} 个解出此题的人！` : ''}`);
 
       // 更新题目统计
       if (question.value) {
