@@ -410,7 +410,7 @@ import {
 import MatrixRainCanvas from '@/components/effects/MatrixRainCanvas.vue';
 
 // API imports
-import { getQuestionDetail, type QuestionItem } from '@/api/question';
+import { getQuestionDetail, type QuestionItem, submitFlag as submitFlagAPI, type SubmitFlagRequest } from '@/api/question';
 import {
   startContainer,
   getContainerInfo,
@@ -419,7 +419,7 @@ import {
   type ContainerInfo,
   ContainerStatus
 } from '@/api/docker';
-import { submitFlag as submitFlagAPI, getUserRecords, type SubmitRecord, type UserSubmitRecord } from '@/api/record';
+import { getUserRecords, type SubmitRecord, type UserSubmitRecord } from '@/api/record';
 
 const route = useRoute();
 const router = useRouter();
@@ -670,9 +670,8 @@ const submitFlag = async () => {
   submitting.value = true;
   
   try {
-    const response = await submitFlagAPI({
-      question_id: questionId.value,
-      provided: submitForm.value.flag.trim()
+    const response = await submitFlagAPI(questionId.value, {
+      flag: submitForm.value.flag.trim()
     });
 
     if (response?.data?.correction) {
@@ -687,7 +686,7 @@ const submitFlag = async () => {
 
       if (question.value) {
         question.value.try_number += 1;
-    }
+      }
     }
 
     submitForm.value.flag = '';

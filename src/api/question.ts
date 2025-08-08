@@ -77,7 +77,14 @@ export interface SubmitFlagRequest {
   flag: string;
 }
 
+// 提交Flag响应
+export interface SubmitFlagResponse {
+  correction: boolean;
+  rank?: number;
+  message: string;
+}
+
 // 提交Flag
 export function submitFlag(question_id: number, data: SubmitFlagRequest) {
-  return request.post<ApiResponse<null>>(`/question/${question_id}/attempt`, data);
+  return request.post<ApiResponse<SubmitFlagResponse>>(`/question/${question_id}/attempt`, data);
 } 
