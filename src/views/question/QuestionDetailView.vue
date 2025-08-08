@@ -573,18 +573,32 @@ const startEnvironment = async () => {
 
 // 格式化访问URL
 const formatAccessUrl = (address: string) => {
-  // 如果地址已经包含协议，直接返回
+  // 硬编码IP地址
+  const HARDCODED_IP = '81.70.202.254';
+  
+  // 如果地址已经包含协议，提取端口号并替换IP
   if (address.startsWith('http://') || address.startsWith('https://')) {
+    const portMatch = address.match(/:(\d+)(?:\/|$)/);
+    if (portMatch) {
+      return `${HARDCODED_IP}:${portMatch[1]}`;
+    }
     return address;
   }
 
-  // 如果是 IP:PORT 格式，自动添加 http://
-  if (address.match(/^\d+\.\d+\.\d+\.\d+:\d+$/) || address.match(/^localhost:\d+$/) || address.match(/^127\.0\.0\.1:\d+$/)) {
-    return `http://${address}`;
+  // 如果是 IP:PORT 格式，提取端口号并使用硬编码IP
+  const ipPortMatch = address.match(/^[\d\.]+:(\d+)$/);
+  if (ipPortMatch) {
+    return `${HARDCODED_IP}:${ipPortMatch[1]}`;
   }
 
-  // 默认添加 http://
-  return `http://${address}`;
+  // 如果是 localhost:PORT 或 127.0.0.1:PORT 格式，提取端口号并使用硬编码IP
+  const localhostMatch = address.match(/^(?:localhost|127\.0\.0\.1):(\d+)$/);
+  if (localhostMatch) {
+    return `${HARDCODED_IP}:${localhostMatch[1]}`;
+  }
+
+  // 默认返回原地址
+  return address;
 };
 
 // 打开环境
@@ -712,11 +726,16 @@ const submitFlag = async () => {
 
       // 自动停止容器（如果有运行的容器）
       console.log('检查容器状态:', container.value?.status);
+      console.log('容器docker_id:', container.value?.docker_id);
       if (container.value?.status === 'RUNNING') {
         console.log('开始停止容器...');
         try {
-          await stopContainer(questionId.value);
+          await stopContainer(container.value.docker_id);
           ElMessage.info('容器已自动停止');
+          container.value = null;
+          localStorage.removeItem(`container_${questionId.value}`);
+          stopCountdown();
+          stopContainerStatusCheck();
           await checkUserContainer();
         } catch (stopError) {
           console.warn('自动停止容器失败:', stopError);

@@ -866,7 +866,6 @@ import {
   generateTopologyImage,
   generateDockerCompose,
   getComposeFile,
-  getTopologyImageUrl,
   type InputScenarioRequest,
   type InputDevicesRequest,
   type GenerateTopologyRequest,
@@ -1927,7 +1926,7 @@ const startTopologyGeneration = async () => {
 
     // 完成
     generationState.value = 'completed'
-    generatedTopologyImage.value = imageResult.topology_url
+    generatedTopologyImage.value = imageResult.image_data
     ElMessage.success('拓扑图生成完成！')
 
   } catch (error: any) {
@@ -2098,17 +2097,17 @@ const generateTopologyImageFile = async () => {
   const response = await generateTopologyImage(imageData)
   console.log('拓扑图像生成响应:', response)
 
-  if (!response || response.code !== 200) {
+  if (!response || response.code !== 200 || !response.data) {
     console.error('拓扑图像生成失败，响应:', response)
     throw new Error(response?.message || '生成拓扑图像失败')
   }
 
-  // 获取拓扑图像URL
-  const imageUrl = getTopologyImageUrl(deployId.value)
-  console.log('拓扑图像URL:', imageUrl)
+  // 直接使用API返回的图片数据
+  const imageDataUrl = response.data.image_data
+  console.log('拓扑图像数据:', imageDataUrl ? '已获取base64图片数据' : '图片数据为空')
 
   return {
-    topology_url: imageUrl
+    image_data: imageDataUrl
   }
 }
 
@@ -2271,7 +2270,7 @@ const startDockerGeneration = async () => {
     dockerGenerationState.value = 'generating'
     dockerGenerationError.value = ''
 
-    ElMessage.info('开始生成Docker Compose文件，请稍候...')
+    ElMessage.info('正在生成Docker Compose文件，这可能需要2-3分钟，请耐心等待...')
 
     if (!deployId.value) {
       throw new Error('部署ID不存在')
@@ -2305,8 +2304,20 @@ const startDockerGeneration = async () => {
   } catch (error: any) {
     console.error('Docker Compose生成失败:', error)
     dockerGenerationState.value = 'failed'
-    dockerGenerationError.value = error.message || '生成Docker Compose文件时发生未知错误'
-    ElMessage.error('Docker Compose生成失败: ' + dockerGenerationError.value)
+    
+    // 更详细的错误处理
+    let errorMessage = error.message || '生成Docker Compose文件时发生未知错误'
+    
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      errorMessage = '请求超时，后端AI生成需要较长时间，请稍后重试'
+    } else if (error.response?.status === 502) {
+      errorMessage = '服务器网关错误，可能是后端AI服务超时，请稍后重试'
+    } else if (error.response?.status === 500) {
+      errorMessage = '服务器内部错误，可能是AI生成失败，请联系管理员或稍后重试'
+    }
+    
+    dockerGenerationError.value = errorMessage
+    ElMessage.error('Docker Compose生成失败: ' + errorMessage)
   }
 }
 
