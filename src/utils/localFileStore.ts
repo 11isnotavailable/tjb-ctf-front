@@ -40,3 +40,24 @@ export function getCurrentContext(): DefendContext {
     questionId: Number(localStorage.getItem('defend_current_question')),
   };
 }
+
+export interface AnalysisReport {
+  pcapReport: string;
+  logReport: string;
+}
+
+export function saveAnalysisReport(containerId: number, report: AnalysisReport) {
+  const key = `defend_analysis_${containerId}`;
+  localStorage.setItem(key, JSON.stringify(report));
+}
+
+export function getAnalysisReport(containerId: number): AnalysisReport | null {
+  const key = `defend_analysis_${containerId}`;
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
