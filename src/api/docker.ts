@@ -9,7 +9,7 @@ interface ApiResponse<T> {
 // 容器状态枚举
 export enum ContainerStatus {
   CREATING = 'CREATING',
-  RUNNING = 'RUNNING', 
+  RUNNING = 'RUNNING',
   CLOSING = 'CLOSING',
   CLOSED = 'CLOSED'
 }
@@ -19,6 +19,13 @@ export enum DockerType {
   STATIC = 'STATIC',
   DYNAMIC = 'DYNAMIC',
   ISOLATED = 'ISOLATED'
+}
+
+export enum PcapStatusEnum {
+  RUNNING = 'running',
+  STOPPED = 'stopped',
+  STOPPED_WITH_FILES = 'stopped_with_files',
+  FAILED = 'failed',
 }
 
 // 容器信息接口
@@ -36,6 +43,18 @@ export interface ContainerInfo {
   user_id: number;
   question_name?: string;
   username?: string;
+}
+
+export interface PcapStatus {
+  status: PcapStatusEnum
+}
+
+export interface PcapFilesResponse {
+  pcap_files: string[]
+}
+
+export interface LogFilesResponse {
+  log_files: string[]
 }
 
 // 容器列表响应接口（管理员用）
@@ -57,6 +76,11 @@ export function getContainerInfo(container_id: number) {
   return request.get<ApiResponse<ContainerInfo>>(`/docker/container/${container_id}`);
 }
 
+// 获取用户容器列表
+export function getUserContainerList() {
+  return request.get<ApiResponse<Array<ContainerInfo>>>('/docker/containers');
+}
+
 // 刷新容器
 export function refreshContainer(container_id: number) {
   return request.put<ApiResponse<{ container: ContainerInfo; message: string }>>(`/docker/container/${container_id}`);
@@ -65,6 +89,19 @@ export function refreshContainer(container_id: number) {
 // 停止容器
 export function stopContainer(container_id: number) {
   return request.delete<ApiResponse<{ message: string }>>(`/docker/container/${container_id}`);
+}
+
+// pcap 相关接口
+export function getPcapStatus(container_id: number) {
+  return request.get<ApiResponse<PcapStatus>>(`/docker/pcap/${container_id}`);
+}
+
+export function stopPcapWithFiles(container_id: number) {
+  return request.post<ApiResponse<PcapFilesResponse>>(`/docker/pcap/${container_id}/stop`);
+}
+
+export function getContainerLogs(container_id: number) {
+  return request.get<ApiResponse<LogFilesResponse>>(`/docker/logs/${container_id}`);
 }
 
 // 获取容器列表（管理员接口）
