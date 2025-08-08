@@ -70,6 +70,20 @@ export function generateTopologyImage(data: GenerateTopologyRequest) {
   return request.post<ApiResponse<TopologyImageResponse>>('/deploy/topology_image', data);
 }
 
+// 获取拓扑图像
+export function getTopologyImage(deployId: number) {
+  return request.get(`/deploy/topology_image/${deployId}`, {
+    responseType: 'blob'
+  });
+}
+
+// 获取题目拓扑图像
+export function getQuestionTopologyImage(questionId: number) {
+  return request.get(`/deploy/topology_image/question/${questionId}`, {
+    responseType: 'blob'
+  });
+}
+
 // 生成Docker Compose文件
 export function generateDockerCompose(data: GenerateTopologyRequest) {
   // 为Docker生成设置更长的超时时间（10分钟）

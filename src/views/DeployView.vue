@@ -864,6 +864,7 @@ import {
   inputDevices,
   generateTopology,
   generateTopologyImage,
+  getTopologyImage,
   generateDockerCompose,
   getComposeFile,
   type InputScenarioRequest,
@@ -2094,20 +2095,39 @@ const generateTopologyImageFile = async () => {
   }
 
   console.log('开始生成拓扑图像，Deploy ID:', deployId.value)
+  
+  // 第一步：调用POST接口生成拓扑图像
   const response = await generateTopologyImage(imageData)
   console.log('拓扑图像生成响应:', response)
 
-  if (!response || response.code !== 200 || !response.data) {
+  if (!response || response.code !== 200) {
     console.error('拓扑图像生成失败，响应:', response)
     throw new Error(response?.message || '生成拓扑图像失败')
   }
 
-  // 直接使用API返回的图片数据
-  const imageDataUrl = response.data.image_data
-  console.log('拓扑图像数据:', imageDataUrl ? '已获取base64图片数据' : '图片数据为空')
-
-  return {
-    image_data: imageDataUrl
+  console.log('拓扑图像生成成功，开始获取图片数据...')
+  
+  // 第二步：调用GET接口获取实际的图片数据
+  try {
+    const imageResponse = await getTopologyImage(deployId.value)
+    console.log('获取拓扑图片成功，类型:', imageResponse.type)
+    
+    // 将Blob转换为base64格式的数据URL
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(imageResponse)
+    })
+    
+    console.log('拓扑图像数据已转换为base64格式')
+    
+    return {
+      image_data: base64
+    }
+  } catch (error) {
+    console.error('获取拓扑图片失败:', error)
+    throw new Error('获取拓扑图片失败: ' + String(error))
   }
 }
 

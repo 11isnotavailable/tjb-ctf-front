@@ -227,7 +227,7 @@
                       :loading="restarting"
                       :icon="Refresh"
                     >
-                      重启容器
+                    刷新容器
                     </el-button>
                     <el-button
                       type="danger"
