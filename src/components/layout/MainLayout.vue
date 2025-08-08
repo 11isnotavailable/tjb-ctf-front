@@ -10,7 +10,7 @@
           <div class="nav-item"><el-icon><DataLine /></el-icon><span>平台介绍</span></div>
           <div class="nav-item" @click="goToQuestions"><el-icon><List /></el-icon><span>题目</span></div>
           <div class="nav-item" @click="goToDeploy"><el-icon><Monitor /></el-icon><span>部署</span></div>
-          <div class="nav-item"><CrossSwords class="custom-icon" /><span>一键攻击</span></div>
+          <div class="nav-item" @click="goToAttack"><CrossSwords class="custom-icon" /><span>一键攻击</span></div>
           <div class="nav-item"><Shield class="custom-icon" /><span>智能防御</span></div>
         </div>
         <div class="action-area">
@@ -68,6 +68,9 @@ const goToDeploy = () => {
 };
 const goToLogin = (route = '/login') => {
   router.push(route);
+};
+const goToAttack = () => {
+  router.push('/home/attack');
 };
 </script>
 

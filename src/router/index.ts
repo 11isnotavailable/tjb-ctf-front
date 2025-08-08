@@ -68,6 +68,12 @@ const routes = [
         name: 'Deploy',
         component: () => import('../views/DeployView.vue'),
         meta: { title: 'AI 部署助手' }
+      },
+      {
+        path: 'attack',
+        name: 'Attack',
+        component: () => import('@/views/AttackView.vue'),
+        meta: { title: '自动攻击' }
       }
     ]
   },
