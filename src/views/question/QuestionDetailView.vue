@@ -675,15 +675,31 @@ const submitFlag = async () => {
     });
 
     console.log('提交Flag响应:', response);
+    console.log('response.data:', response?.data);
+    console.log('response.data.code:', response?.data?.code);
+    console.log('response.data.message:', response?.data?.message);
 
     // 根据实际API响应结构判断flag是否正确
-    // API返回格式: { data: { code: 200, message: 'flag正确', data: null } }
-    const isCorrect = response?.data?.code === 200 && 
-                     (response?.data?.message === 'flag正确' || 
-                      response?.data?.message?.includes('正确'));
+    // 完整响应格式: { data: { code: 200, message: 'flag正确', data: null }, status: 200 }
+    const responseCode = response?.data?.code;
+    const responseMessage = response?.data?.message;
+    
+    console.log('responseCode类型:', typeof responseCode, '值:', responseCode);
+    console.log('responseMessage类型:', typeof responseMessage, '值:', responseMessage);
+    console.log('严格相等判断 responseCode === 200:', responseCode === 200);
+    console.log('严格相等判断 responseMessage === "flag正确":', responseMessage === 'flag正确');
+    
+    const isCorrect = responseCode === 200 && 
+                     responseMessage && 
+                     (responseMessage === 'flag正确' || 
+                      responseMessage.includes('正确') ||
+                      responseMessage.includes('成功'));
 
+    console.log('isCorrect判断结果:', isCorrect);
+    
     if (isCorrect) {
-      ElMessage.success(`🎉 恭喜！Flag正确！${response.data.rank ? `您是第 ${response.data.rank} 个解出此题的人！` : ''}`);
+      console.log('进入正确分支');
+      ElMessage.success(`🎉 恭喜！Flag正确！${response.data.data?.rank ? `您是第 ${response.data.data.rank} 个解出此题的人！` : ''}`);
 
       // 更新题目统计
       if (question.value) {
@@ -695,7 +711,9 @@ const submitFlag = async () => {
       submitForm.value.flag = '';
 
       // 自动停止容器（如果有运行的容器）
+      console.log('检查容器状态:', container.value?.status);
       if (container.value?.status === 'RUNNING') {
+        console.log('开始停止容器...');
         try {
           await stopContainer(questionId.value);
           ElMessage.info('容器已自动停止');
@@ -703,6 +721,8 @@ const submitFlag = async () => {
         } catch (stopError) {
           console.warn('自动停止容器失败:', stopError);
         }
+      } else {
+        console.log('容器未运行，无需停止');
       }
 
       // 尝试获取用户提交记录（如果API可用）
@@ -712,8 +732,10 @@ const submitFlag = async () => {
         console.warn('获取提交记录失败:', recordError);
       }
     } else {
+      console.log('进入错误分支');
       // 显示具体的错误信息
       const errorMessage = response?.data?.message || 'Flag错误，请继续尝试';
+      console.log('错误信息:', errorMessage);
       ElMessage.error(`❌ ${errorMessage}`);
 
       if (question.value) {
