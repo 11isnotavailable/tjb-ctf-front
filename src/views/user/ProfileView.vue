@@ -603,9 +603,13 @@ const formatDate = (dateString?: string) => {
 // 获取用户统计数据
 const fetchUserStats = async () => {
   try {
+    console.log('开始获取用户统计数据, user_id:', userInfo.value.user_id);
     const response = await getUserStats(userInfo.value.user_id);
-    if (response.data.code === 200) {
-      const statsData = response.data.data;
+    console.log('getUserStats响应:', response);
+    
+    if (response.code === 200) {
+      console.log('统计数据获取成功:', response.data);
+      const statsData = response.data;
       userStats.totalSolved = statsData.total_attempts || 0; // 总解题次数
       userStats.totalSuccessSolved = statsData.total_solved || 0; // 正确解题数
       userStats.totalScore = statsData.total_score || 0;
@@ -613,15 +617,22 @@ const fetchUserStats = async () => {
       // 存储完整的统计数据供图表使用
       fullStatsData.value = statsData;
       
+      console.log('解析后的用户统计:', {
+        totalSolved: userStats.totalSolved,
+        totalSuccessSolved: userStats.totalSuccessSolved,
+        totalScore: userStats.totalScore
+      });
+      
       // 如果当前在records标签页，初始化图表（即使没有记录数据也显示空图表）
       if (activeTab.value === 'records') {
         initCharts();
       }
     } else {
-      ElMessage.error(response.data.message || '获取用户统计数据失败');
+      console.error('统计数据响应错误:', response);
+      ElMessage.error(response.message || '获取用户统计数据失败');
     }
   } catch (error) {
-    console.error('获取用户统计数据失败:', error);
+    console.error('获取用户统计数据异常:', error);
     ElMessage.error('获取用户统计数据失败');
   }
 };
@@ -636,22 +647,32 @@ const fetchRecords = async () => {
       page_size: pageSize.value
     };
     
+    console.log('开始获取解题记录, user_id:', userInfo.value.user_id, 'params:', params);
     const response = await getUserRecords(userInfo.value.user_id, params);
-    if (response.data.code === 200) {
-      const recordsData = response.data.data;
+    console.log('getUserRecords响应:', response);
+    
+    if (response.code === 200) {
+      console.log('解题记录获取成功:', response.data);
+      const recordsData = response.data;
       records.value = recordsData.items || []; // 使用 items 而不是 records
       total.value = recordsData.total || 0;
+
+      console.log('解析后的记录数据:', {
+        records: records.value,
+        total: total.value
+      });
 
       // 数据加载完成后初始化图表（即使没有记录数据也显示空图表）
       if (activeTab.value === 'records' && fullStatsData.value) {
         initCharts();
       }
     } else {
-      ElMessage.error(response.data.message || '获取解题记录失败');
+      console.error('记录数据响应错误:', response);
+      ElMessage.error(response.message || '获取解题记录失败');
     }
   } catch (error) {
+    console.error('获取解题记录异常:', error);
     ElMessage.error('获取解题记录失败');
-    console.error(error);
   } finally {
     loadingRecords.value = false;
   }
