@@ -69,6 +69,24 @@
                   </el-radio-group>
                 </el-form-item>
                 
+                <!-- 白盒测试模式下显示问题编号输入 -->
+                <el-form-item 
+                  v-if="attackForm.is_white" 
+                  label="问题编号" 
+                  prop="question_id"
+                >
+                  <el-input-number 
+                    v-model="attackForm.question_id" 
+                    :min="1"
+                    placeholder="请输入CTF题目的问题编号"
+                    :disabled="isAttacking"
+                    style="width: 100%"
+                  />
+                  <div class="form-help-text">
+                    白盒测试需要指定CTF题目的问题编号，用于获取Docker Compose配置
+                  </div>
+                </el-form-item>
+                
                 
               </el-form>
               
@@ -186,10 +204,11 @@ const attackForm = reactive<StartAttackReq>({
   username: 'root',
   password: 'root',
   is_white: false,
+  question_id: undefined,
 });
 
 // 表单验证规则
-const formRules = {
+const formRules = computed(() => ({
   ip: [
     { required: true, message: '请输入目标IP地址', trigger: 'blur' },
     { pattern: /^(\d{1,3}\.){3}\d{1,3}$/, message: '请输入有效的IP地址', trigger: 'blur' }
@@ -202,8 +221,12 @@ const formRules = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' }
-  ]
-};
+  ],
+  question_id: attackForm.is_white ? [
+    { required: true, message: '白盒测试模式下，问题编号为必填项', trigger: 'blur' },
+    { type: 'number', min: 1, message: '问题编号必须大于0', trigger: 'blur' }
+  ] : []
+}));
 
 // 计算属性
 const attackStatus = computed(() => {
@@ -553,6 +576,13 @@ onUnmounted(() => {
   font-size: 1.1rem;
   font-weight: 600;
   color: #374151;
+}
+
+.form-help-text {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 5px;
+  line-height: 1.4;
 }
 
 /* 响应式设计 */

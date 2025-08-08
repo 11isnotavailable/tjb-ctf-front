@@ -2110,14 +2110,22 @@ const generateTopologyImageFile = async () => {
   // 第二步：调用GET接口获取实际的图片数据
   try {
     const imageResponse = await getTopologyImage(deployId.value)
-    console.log('获取拓扑图片成功，类型:', imageResponse.type)
+    console.log('获取拓扑图片成功，响应对象:', imageResponse)
+    console.log('图片数据类型:', imageResponse.data?.constructor?.name)
+    console.log('图片数据大小:', imageResponse.data?.size)
+    
+    // 验证返回的数据是否为Blob
+    if (!(imageResponse.data instanceof Blob)) {
+      console.error('返回的数据不是Blob类型:', imageResponse.data)
+      throw new Error('服务器返回的图片数据格式不正确')
+    }
     
     // 将Blob转换为base64格式的数据URL
     const base64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => resolve(reader.result as string)
       reader.onerror = reject
-      reader.readAsDataURL(imageResponse)
+      reader.readAsDataURL(imageResponse.data)
     })
     
     console.log('拓扑图像数据已转换为base64格式')

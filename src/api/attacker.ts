@@ -14,6 +14,7 @@ export interface StartAttackReq {
   password: string;
   is_white: boolean;
   deploy_id?: number;
+  question_id?: number;
 }
 
 // 启动攻击响应数据

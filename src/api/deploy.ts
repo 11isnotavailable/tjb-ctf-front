@@ -72,14 +72,14 @@ export function generateTopologyImage(data: GenerateTopologyRequest) {
 
 // 获取拓扑图像
 export function getTopologyImage(deployId: number) {
-  return request.get(`/deploy/topology_image/${deployId}`, {
+  return request.get<Blob>(`/deploy/topology_image/${deployId}`, {
     responseType: 'blob'
   });
 }
 
 // 获取题目拓扑图像
 export function getQuestionTopologyImage(questionId: number) {
-  return request.get(`/deploy/topology_image/question/${questionId}`, {
+  return request.get<Blob>(`/deploy/topology_image/question/${questionId}`, {
     responseType: 'blob'
   });
 }
