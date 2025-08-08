@@ -540,8 +540,16 @@
             <div v-if="generationState === 'completed'" class="generation-completed">
               <div class="topology-result">
                 <h4>✅ 拓扑图生成完成！</h4>
-                <div class="topology-image-container">
-                  <img :src="generatedTopologyImage" alt="生成的网络拓扑图" class="topology-image" />
+                <div class="topology-link-container">
+                  <p class="link-description">点击下方链接在新标签页中查看拓扑图：</p>
+                  <a 
+                    :href="generatedTopologyImage" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="topology-link"
+                  >
+                    🖼️ 查看拓扑图
+                  </a>
                 </div>
                 <div class="result-actions">
                   <button class="action-btn download-btn" @click="downloadTopology">
@@ -1927,7 +1935,7 @@ const startTopologyGeneration = async () => {
 
     // 完成
     generationState.value = 'completed'
-    generatedTopologyImage.value = imageResult.image_data
+    generatedTopologyImage.value = imageResult.image_url
     ElMessage.success('拓扑图生成完成！')
 
   } catch (error: any) {
@@ -2096,7 +2104,7 @@ const generateTopologyImageFile = async () => {
 
   console.log('开始生成拓扑图像，Deploy ID:', deployId.value)
   
-  // 第一步：调用POST接口生成拓扑图像
+  // 调用POST接口生成拓扑图像
   const response = await generateTopologyImage(imageData)
   console.log('拓扑图像生成响应:', response)
 
@@ -2105,37 +2113,14 @@ const generateTopologyImageFile = async () => {
     throw new Error(response?.message || '生成拓扑图像失败')
   }
 
-  console.log('拓扑图像生成成功，开始获取图片数据...')
+  console.log('拓扑图像生成成功，构建图片访问链接...')
   
-  // 第二步：调用GET接口获取实际的图片数据
-  try {
-    const imageResponse = await getTopologyImage(deployId.value)
-    console.log('获取拓扑图片成功，响应对象:', imageResponse)
-    console.log('图片数据类型:', imageResponse.data?.constructor?.name)
-    console.log('图片数据大小:', imageResponse.data?.size)
-    
-    // 验证返回的数据是否为Blob
-    if (!(imageResponse.data instanceof Blob)) {
-      console.error('返回的数据不是Blob类型:', imageResponse.data)
-      throw new Error('服务器返回的图片数据格式不正确')
-    }
-    
-    // 将Blob转换为base64格式的数据URL
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(imageResponse.data)
-    })
-    
-    console.log('拓扑图像数据已转换为base64格式')
-    
-    return {
-      image_data: base64
-    }
-  } catch (error) {
-    console.error('获取拓扑图片失败:', error)
-    throw new Error('获取拓扑图片失败: ' + String(error))
+  // 构建完整的图片访问URL
+  const imageUrl = `http://81.70.202.254:5005/api/deploy/topology_image/${deployId.value}`
+  console.log('拓扑图像访问链接:', imageUrl)
+  
+  return {
+    image_url: imageUrl
   }
 }
 
@@ -2232,8 +2217,9 @@ const downloadTopology = () => {
     // 创建下载链接
     const link = document.createElement('a')
     link.href = generatedTopologyImage.value
-    link.download = `topology_${deployId.value || 'generated'}.png`
+    link.download = `topology_${deployId.value || 'generated'}.svg`
     link.target = '_blank'
+    link.rel = 'noopener noreferrer'
 
     // 触发下载
     document.body.appendChild(link)
@@ -4644,6 +4630,47 @@ const findNodeById = (nodes, targetId) => {
   box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
 }
 
+/* 拓扑图链接样式 */
+.topology-link-container {
+  text-align: center;
+  margin: 20px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #e9ecef;
+}
+
+.link-description {
+  color: #6c757d;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.topology-link {
+  display: inline-block;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+.topology-link:hover {
+  background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(40, 167, 69, 0.3);
+  text-decoration: none;
+  color: white;
+}
+
+.topology-link:active {
+  transform: translateY(0);
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .file-header {
@@ -4666,6 +4693,11 @@ const findNodeById = (nodes, targetId) => {
     width: 100%;
     max-width: 300px;
     justify-content: center;
+  }
+
+  .topology-link {
+    padding: 14px 20px;
+    font-size: 0.95rem;
   }
 }
 </style>
