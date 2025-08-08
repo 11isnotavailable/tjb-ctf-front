@@ -77,11 +77,12 @@ export interface SubmitFlagRequest {
   flag: string;
 }
 
-// 提交Flag响应
+// 提交Flag响应 - 根据实际API响应结构更新
 export interface SubmitFlagResponse {
-  correction: boolean;
-  rank?: number;
+  code: number;
   message: string;
+  data: any; // 可能为null或包含其他数据
+  rank?: number; // 可能在某些情况下返回排名信息
 }
 
 // 提交Flag

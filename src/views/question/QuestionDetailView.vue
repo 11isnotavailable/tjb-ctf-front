@@ -674,23 +674,55 @@ const submitFlag = async () => {
       flag: submitForm.value.flag.trim()
     });
 
-    if (response?.data?.correction) {
+    console.log('提交Flag响应:', response);
+
+    // 根据实际API响应结构判断flag是否正确
+    // API返回格式: { data: { code: 200, message: 'flag正确', data: null } }
+    const isCorrect = response?.data?.code === 200 && 
+                     (response?.data?.message === 'flag正确' || 
+                      response?.data?.message?.includes('正确'));
+
+    if (isCorrect) {
       ElMessage.success(`🎉 恭喜！Flag正确！${response.data.rank ? `您是第 ${response.data.rank} 个解出此题的人！` : ''}`);
 
+      // 更新题目统计
       if (question.value) {
         question.value.solved_number += 1;
         question.value.try_number += 1;
       }
+
+      // 清空输入框
+      submitForm.value.flag = '';
+
+      // 自动停止容器（如果有运行的容器）
+      if (container.value?.status === 'RUNNING') {
+        try {
+          await stopContainer(questionId.value);
+          ElMessage.info('容器已自动停止');
+          await checkUserContainer();
+        } catch (stopError) {
+          console.warn('自动停止容器失败:', stopError);
+        }
+      }
+
+      // 尝试获取用户提交记录（如果API可用）
+      try {
+        await fetchUserRecords();
+      } catch (recordError) {
+        console.warn('获取提交记录失败:', recordError);
+      }
     } else {
-      ElMessage.error('❌ Flag错误，请继续尝试');
+      // 显示具体的错误信息
+      const errorMessage = response?.data?.message || 'Flag错误，请继续尝试';
+      ElMessage.error(`❌ ${errorMessage}`);
 
       if (question.value) {
         question.value.try_number += 1;
       }
-    }
 
-    submitForm.value.flag = '';
-    await fetchUserRecords();
+      // 清空输入框
+      submitForm.value.flag = '';
+    }
   } catch (error) {
     console.error('提交失败:', error);
     ElMessage.error('提交失败');
