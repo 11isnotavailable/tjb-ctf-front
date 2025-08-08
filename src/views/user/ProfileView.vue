@@ -32,6 +32,23 @@
               <div class="stat-label">总分</div>
             </div>
           </div>
+          
+          <el-divider />
+          
+          <!-- 分析报告按钮 -->
+          <div class="report-section">
+            <el-button 
+              type="success" 
+              size="large"
+              :loading="isDownloading"
+              @click="handleDownloadReport"
+              class="report-btn"
+            >
+              <el-icon><Document /></el-icon>
+              获取分析报告
+            </el-button>
+            <p class="report-tip">下载详细的个人能力分析报告</p>
+          </div>
         </el-card>
       </el-col>
       
@@ -222,10 +239,11 @@
 import { ref, reactive, onMounted, computed, watch, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
+import { Document } from '@element-plus/icons-vue';
 import { useUserStore } from '@/stores/user';
 import { validateFormField } from '@/utils/validator';
 import type { FormInstance, FormRules } from 'element-plus';
-import { updateUserInfo, updateUserPassword } from '@/api/user';
+import { updateUserInfo, updateUserPassword, getUserStats, getUserRecords, getEvaluationReport } from '@/api/user';
 // 引入 echarts
 import * as echarts from 'echarts/core';
 import { PieChart, RadarChart, LineChart } from 'echarts/charts';
@@ -258,6 +276,9 @@ const userAvatar = ref('');
 
 // 活动标签页
 const activeTab = ref('settings');
+
+// 下载分析报告状态
+const isDownloading = ref(false);
 
 // 个人资料表单
 const formRef = ref<FormInstance>();
@@ -602,15 +623,18 @@ const formatDate = (dateString?: string) => {
 // 获取用户统计数据
 const fetchUserStats = async () => {
   try {
-    // 实际项目中应当使用API请求
-    await new Promise(resolve => setTimeout(resolve, 500)); // 模拟请求延迟
-    
-    // 模拟数据
-    userStats.totalSolved = 15;
-    userStats.totalSuccessSolved = 12;
-    userStats.totalScore = 2340;
+    const response = await getUserStats(userInfo.value.user_id);
+    if (response.data.code === 200) {
+      const statsData = response.data.data;
+      userStats.totalSolved = statsData.total_solved || 0;
+      userStats.totalSuccessSolved = statsData.total_success_solved || 0;
+      userStats.totalScore = statsData.total_score || 0;
+    } else {
+      ElMessage.error(response.data.message || '获取用户统计数据失败');
+    }
   } catch (error) {
     console.error('获取用户统计数据失败:', error);
+    ElMessage.error('获取用户统计数据失败');
   }
 };
 
@@ -619,55 +643,23 @@ const fetchRecords = async () => {
   loadingRecords.value = true;
   
   try {
-    // 实际项目中应当使用API请求
-    await new Promise(resolve => setTimeout(resolve, 800)); // 模拟请求延迟
+    const params = {
+      page: currentPage.value,
+      page_size: pageSize.value
+    };
     
-    // 模拟数据
-    const mockRecords = [
-      {
-        record_id: 1,
-        question_id: 1,
-        question_title: 'SQL注入基础挑战',
-        tag: 'Web',
-        difficulty: 2,
-        status: 2, // 已解决
-        submit_time: '2025-07-20 15:23:45'
-      },
-      {
-        record_id: 2,
-        question_id: 2,
-        question_title: 'Buffer溢出入门',
-        tag: 'Pwn',
-        difficulty: 3,
-        status: 2, // 已解决
-        submit_time: '2025-07-19 10:15:32'
-      },
-      {
-        record_id: 3,
-        question_id: 3,
-        question_title: 'XSS跨站脚本攻击',
-        tag: 'Web',
-        difficulty: 2,
-        status: 1, // 答案错误
-        submit_time: '2025-07-18 22:05:18'
-      },
-      {
-        record_id: 4,
-        question_id: 4,
-        question_title: 'RSA加密破解',
-        tag: 'Crypto',
-        difficulty: 4,
-        status: 0, // 进行中
-        submit_time: '2025-07-17 14:30:00'
-      }
-    ];
-    
-    records.value = mockRecords;
-    total.value = mockRecords.length;
+    const response = await getUserRecords(userInfo.value.user_id, params);
+    if (response.data.code === 200) {
+      const recordsData = response.data.data;
+      records.value = recordsData.records || [];
+      total.value = recordsData.total || 0;
 
-    // 数据加载完成后初始化图表
-    if (activeTab.value === 'records') {
-      initCharts();
+      // 数据加载完成后初始化图表
+      if (activeTab.value === 'records') {
+        initCharts();
+      }
+    } else {
+      ElMessage.error(response.data.message || '获取解题记录失败');
     }
   } catch (error) {
     ElMessage.error('获取解题记录失败');
@@ -739,6 +731,40 @@ const updatePassword = async () => {
 // 跳转到题目详情
 const goToQuestion = (questionId: number) => {
   router.push(`/questions/${questionId}`);
+};
+
+// 下载分析报告
+const handleDownloadReport = async () => {
+  try {
+    isDownloading.value = true;
+    
+    const response = await getEvaluationReport();
+    
+    // 创建下载链接
+    const blob = new Blob([response.data], { 
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // 设置文件名（带时间戳）
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    link.download = `个人能力分析报告_${userInfo.value.username}_${timestamp}.docx`;
+    
+    // 触发下载
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    ElMessage.success('分析报告下载成功');
+  } catch (error: any) {
+    console.error('下载分析报告失败:', error);
+    ElMessage.error(error.response?.data?.message || '下载分析报告失败');
+  } finally {
+    isDownloading.value = false;
+  }
 };
 
 // 监听标签页切换
@@ -826,6 +852,34 @@ onBeforeUnmount(() => {
 .stat-label {
   font-size: 13px;
   color: #606266;
+}
+
+.report-section {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.report-btn {
+  width: 100%;
+  height: 45px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.report-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.report-tip {
+  margin: 10px 0 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+  line-height: 1.4;
 }
 
 .card-header {

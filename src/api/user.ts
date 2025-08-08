@@ -80,4 +80,24 @@ export function updateUserPassword(data: {
   new_password: string;
 }) {
   return request.post<ApiResponse<null>>('/user/profile/update_password', data);
+}
+
+// 获取用户统计数据
+export function getUserStats(userId: number) {
+  return request.get<ApiResponse<any>>(`/api/user/profile/${userId}/stats`);
+}
+
+// 获取用户解题记录
+export function getUserRecords(userId: number, params?: {
+  page?: number;
+  page_size?: number;
+}) {
+  return request.get<ApiResponse<any>>(`/api/user/profile/${userId}/records`, { params });
+}
+
+// 获取分析报告（下载Word文件）
+export function getEvaluationReport() {
+  return request.get('/api/user/profile/evaluation', {
+    responseType: 'blob', // 设置响应类型为blob以处理文件下载
+  });
 } 
