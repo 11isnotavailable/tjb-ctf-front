@@ -194,10 +194,10 @@
                     />
                   </template>
                 </el-table-column>
-                <el-table-column prop="status" label="状态" width="120">
+                <el-table-column prop="correction" label="状态" width="120">
                   <template #default="scope">
-                    <el-tag :type="scope.row.status === 2 ? 'success' : (scope.row.status === 1 ? 'danger' : 'info')">
-                      {{ scope.row.status === 2 ? '已解决' : (scope.row.status === 1 ? '答案错误' : '进行中') }}
+                    <el-tag :type="scope.row.correction === 1 ? 'success' : 'danger'">
+                      {{ scope.row.correction === 1 ? '已解决' : '答案错误' }}
                     </el-tag>
                   </template>
                 </el-table-column>
@@ -279,6 +279,9 @@ const activeTab = ref('settings');
 
 // 下载分析报告状态
 const isDownloading = ref(false);
+
+// 完整的统计数据
+const fullStatsData = ref<any>(null);
 
 // 个人资料表单
 const formRef = ref<FormInstance>();
@@ -501,98 +504,69 @@ const updateCharts = () => {
 
 // 获取分类数据
 const getCategoryData = () => {
-  const categoryCounts: Record<string, number> = {
-    'Web': 0,
-    'Pwn': 0,
-    'Crypto': 0,
-    'Reverse': 0,
-    'Misc': 0
+  if (!fullStatsData.value?.tag_stats) {
+    return [];
+  }
+  
+  const tagStats = fullStatsData.value.tag_stats;
+  const categoryMapping: Record<string, string> = {
+    'pentest': 'Web安全',
+    'crypto': '密码学',
+    'forensics': '取证分析',
+    'system': '系统安全',
+    'malware': '恶意软件'
   };
   
-  records.value.forEach(record => {
-    if (categoryCounts.hasOwnProperty(record.tag)) {
-      categoryCounts[record.tag]++;
-    }
-  });
-  
-  return Object.keys(categoryCounts).map(key => ({
-    name: key,
-    value: categoryCounts[key]
-  }));
+  return Object.keys(tagStats)
+    .filter(key => tagStats[key].total > 0)
+    .map(key => ({
+      name: categoryMapping[key] || key,
+      value: tagStats[key].solved
+    }));
 };
 
 // 获取最近7天日期
 const getLast7Days = () => {
-  const dates = [];
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    dates.push(`${date.getMonth() + 1}/${date.getDate()}`);
+  if (!fullStatsData.value?.daily_stats) {
+    const dates = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      dates.push(`${date.getMonth() + 1}/${date.getDate()}`);
+    }
+    return dates;
   }
-  return dates;
+  
+  return fullStatsData.value.daily_stats.map((day: any) => {
+    const date = new Date(day.date);
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+  });
 };
 
 // 获取解题趋势数据
 const getSolvedTrendData = () => {
-  const last7Days = [];
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    date.setHours(0, 0, 0, 0);
-    last7Days.push(date.getTime());
+  if (!fullStatsData.value?.daily_stats) {
+    return new Array(7).fill(0);
   }
   
-  const countsMap = new Array(7).fill(0);
-  
-  records.value.forEach(record => {
-    if (record.status === 2) { // 已解决
-      const submissionDate = new Date(record.submit_time);
-      submissionDate.setHours(0, 0, 0, 0);
-      const submissionTime = submissionDate.getTime();
-      
-      for (let i = 0; i < 7; i++) {
-        if (submissionTime === last7Days[i]) {
-          countsMap[i]++;
-          break;
-        }
-      }
-    }
-  });
-  
-  return countsMap;
+  const dailyStats = fullStatsData.value.daily_stats;
+  return dailyStats.map((day: any) => day.solved_count || 0);
 };
 
 // 获取技能雷达图数据
 const getSkillRadarData = () => {
+  if (!fullStatsData.value?.skill_scores) {
+    return [0, 0, 0, 0, 0];
+  }
+  
+  const skillScores = fullStatsData.value.skill_scores;
   return [
-    calculateCategoryScore('Web'),
-    calculateCategoryScore('Reverse'),
-    calculateCategoryScore('Crypto'),
-    calculateCategoryScore('Pwn'),
-    calculateCategoryScore('Misc')
+    skillScores.pentest || 0,    // Web安全
+    skillScores.system || 0,     // 逆向工程  
+    skillScores.crypto || 0,     // 密码学
+    skillScores.malware || 0,    // 二进制
+    skillScores.forensics || 0   // 取证分析
   ];
-};
-
-// 计算分类得分
-const calculateCategoryScore = (category: string) => {
-  const categoryRecords = records.value.filter(r => r.tag === category);
-  if (categoryRecords.length === 0) return 0;
-  
-  const solved = categoryRecords.filter(r => r.status === 2).length;
-  const total = categoryRecords.length;
-  
-  // 基础分数 + 难度加成
-  const baseScore = (solved / total) * 70;
-  let difficultyBonus = 0;
-  
-  categoryRecords.forEach(record => {
-    if (record.status === 2) {
-      const difficulty = record.difficulty || 1;
-      difficultyBonus += difficulty * 2;
-    }
-  });
-  
-  return Math.min(Math.round(baseScore + difficultyBonus), 100);
 };
 
 // 窗口调整大小处理
@@ -627,8 +601,16 @@ const fetchUserStats = async () => {
     if (response.data.code === 200) {
       const statsData = response.data.data;
       userStats.totalSolved = statsData.total_solved || 0;
-      userStats.totalSuccessSolved = statsData.total_success_solved || 0;
+      userStats.totalSuccessSolved = statsData.total_attempts || 0; // 使用 total_attempts
       userStats.totalScore = statsData.total_score || 0;
+      
+      // 存储完整的统计数据供图表使用
+      fullStatsData.value = statsData;
+      
+      // 如果当前在records标签页且已有记录数据，初始化图表
+      if (activeTab.value === 'records' && records.value.length > 0) {
+        initCharts();
+      }
     } else {
       ElMessage.error(response.data.message || '获取用户统计数据失败');
     }
@@ -651,11 +633,11 @@ const fetchRecords = async () => {
     const response = await getUserRecords(userInfo.value.user_id, params);
     if (response.data.code === 200) {
       const recordsData = response.data.data;
-      records.value = recordsData.records || [];
+      records.value = recordsData.items || []; // 使用 items 而不是 records
       total.value = recordsData.total || 0;
 
       // 数据加载完成后初始化图表
-      if (activeTab.value === 'records') {
+      if (activeTab.value === 'records' && fullStatsData.value) {
         initCharts();
       }
     } else {
@@ -781,13 +763,14 @@ watch(() => records.value, () => {
   }
 }, { deep: true });
 
-onMounted(() => {
+onMounted(async () => {
   // 初始化表单数据
   form.username = userInfo.value.username || '';
   form.signature = ''; // 假设后端暂未提供签名字段
   
-  fetchUserStats();
-  fetchRecords();
+  // 先加载统计数据，再加载记录数据
+  await fetchUserStats();
+  await fetchRecords();
   
   // 添加窗口大小变化监听
   window.addEventListener('resize', handleResize);
