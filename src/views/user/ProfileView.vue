@@ -365,10 +365,25 @@ const initCharts = () => {
     // 分类统计饼图
     if (!categoryChart && document.getElementById('categoryChart')) {
       categoryChart = echarts.init(document.getElementById('categoryChart'));
+      const categoryData = getCategoryData();
+      const hasData = categoryData.some(item => item.value > 0);
+      
       categoryChart.setOption({
         title: {
           text: '题目类型分布',
           left: 'center'
+        },
+        graphic: {
+          type: 'text',
+          left: 'center',
+          top: 'middle',
+          style: {
+            text: hasData ? '' : '暂无解题记录',
+            textAlign: 'center',
+            fill: '#999',
+            fontSize: 14
+          },
+          invisible: hasData
         },
         tooltip: {
           trigger: 'item',
@@ -385,12 +400,27 @@ const initCharts = () => {
             type: 'pie',
             radius: '60%',
             center: ['50%', '60%'],
-            data: getCategoryData(),
+            data: categoryData,
             emphasis: {
               itemStyle: {
                 shadowBlur: 10,
                 shadowOffsetX: 0,
                 shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
+            },
+            // 当数据为空或全0时的配置
+            label: {
+              show: true,
+              formatter: function(params: any) {
+                if (params.value === 0) {
+                  return '';
+                }
+                return params.name;
+              }
+            },
+            labelLine: {
+              show: function(params: any) {
+                return params.value > 0;
               }
             }
           }
@@ -401,10 +431,25 @@ const initCharts = () => {
     // 解题趋势折线图
     if (!trendChart && document.getElementById('trendChart')) {
       trendChart = echarts.init(document.getElementById('trendChart'));
+      const trendData = getSolvedTrendData();
+      const hasData = trendData.some(val => val > 0);
+      
       trendChart.setOption({
         title: {
           text: '解题趋势',
           left: 'center'
+        },
+        graphic: {
+          type: 'text',
+          left: 'center',
+          top: 'middle',
+          style: {
+            text: hasData ? '' : '暂无解题记录',
+            textAlign: 'center',
+            fill: '#999',
+            fontSize: 14
+          },
+          invisible: hasData
         },
         tooltip: {
           trigger: 'axis'
@@ -418,7 +463,7 @@ const initCharts = () => {
         },
         series: [
           {
-            data: getSolvedTrendData(),
+            data: trendData,
             type: 'line',
             smooth: true,
             name: '解题数',
@@ -431,10 +476,25 @@ const initCharts = () => {
     // 技能雷达图
     if (!skillRadarChart && document.getElementById('skillRadarChart')) {
       skillRadarChart = echarts.init(document.getElementById('skillRadarChart'));
+      const radarData = getSkillRadarData();
+      const hasData = radarData.some(val => val > 0);
+      
       skillRadarChart.setOption({
         title: {
           text: '技能分布',
           left: 'center'
+        },
+        graphic: {
+          type: 'text',
+          left: 'center',
+          top: 'middle',
+          style: {
+            text: hasData ? '' : '暂无技能数据',
+            textAlign: 'center',
+            fill: '#999',
+            fontSize: 14
+          },
+          invisible: hasData
         },
         radar: {
           indicator: [
@@ -451,7 +511,7 @@ const initCharts = () => {
             type: 'radar',
             data: [
               {
-                value: getSkillRadarData(),
+                value: radarData,
                 name: '能力值',
                 areaStyle: {
                   color: 'rgba(64, 158, 255, 0.3)'
@@ -468,32 +528,59 @@ const initCharts = () => {
 // 更新图表
 const updateCharts = () => {
   if (categoryChart) {
+    const categoryData = getCategoryData();
+    const hasData = categoryData.some(item => item.value > 0);
+    
     categoryChart.setOption({
+      graphic: {
+        style: {
+          text: hasData ? '' : '暂无解题记录'
+        },
+        invisible: hasData
+      },
       series: [
         {
-          data: getCategoryData()
+          data: categoryData
         }
       ]
     });
   }
   
   if (trendChart) {
+    const trendData = getSolvedTrendData();
+    const hasData = trendData.some(val => val > 0);
+    
     trendChart.setOption({
+      graphic: {
+        style: {
+          text: hasData ? '' : '暂无解题记录'
+        },
+        invisible: hasData
+      },
       series: [
         {
-          data: getSolvedTrendData()
+          data: trendData
         }
       ]
     });
   }
   
   if (skillRadarChart) {
+    const radarData = getSkillRadarData();
+    const hasData = radarData.some(val => val > 0);
+    
     skillRadarChart.setOption({
+      graphic: {
+        style: {
+          text: hasData ? '' : '暂无技能数据'
+        },
+        invisible: hasData
+      },
       series: [
         {
           data: [
             {
-              value: getSkillRadarData()
+              value: radarData
             }
           ]
         }
