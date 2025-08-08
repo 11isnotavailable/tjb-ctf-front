@@ -46,15 +46,15 @@
             <h2>📝 题目配置</h2>
             <p>设置CTF题目的基本信息和参数</p>
           </div>
-          
+
           <div class="form-body">
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">题目标题 *</label>
-                <input 
-                  v-model="formData.title" 
-                  type="text" 
-                  class="form-input" 
+                <input
+                  v-model="formData.title"
+                  type="text"
+                  class="form-input"
                   placeholder="请输入题目标题"
                   maxlength="100"
                 />
@@ -62,8 +62,8 @@
               <div class="form-group">
                 <label class="form-label">难度等级 *</label>
                 <div class="difficulty-selector">
-                  <div 
-                    v-for="star in 5" 
+                  <div
+                    v-for="star in 5"
                     :key="star"
                     class="star"
                     :class="{ active: star <= formData.difficulty }"
@@ -79,9 +79,9 @@
             <div class="form-row">
               <div class="form-group full-width">
                 <label class="form-label">题目简介 *</label>
-                <textarea 
-                  v-model="formData.description" 
-                  class="form-textarea" 
+                <textarea
+                  v-model="formData.description"
+                  class="form-textarea"
                   placeholder="请简要描述题目内容和解题思路"
                   rows="4"
                   maxlength="500"
@@ -106,11 +106,11 @@
               </div>
               <div class="form-group">
                 <label class="form-label">最大尝试次数</label>
-                <input 
-                  v-model.number="formData.maxAttempts" 
-                  type="number" 
-                  class="form-input" 
-                  min="1" 
+                <input
+                  v-model.number="formData.maxAttempts"
+                  type="number"
+                  class="form-input"
+                  min="1"
                   max="100"
                 />
               </div>
@@ -119,8 +119,8 @@
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">题目标签 *</label>
-                <select 
-                  v-model="formData.tagId" 
+                <select
+                  v-model="formData.tagId"
                   class="form-select"
                 >
                   <option value="" disabled>请选择题目标签</option>
@@ -131,11 +131,11 @@
               </div>
               <div class="form-group">
                 <label class="form-label">有效时间（秒）</label>
-                <input 
-                  v-model.number="formData.validTime" 
-                  type="number" 
-                  class="form-input" 
-                  min="60" 
+                <input
+                  v-model.number="formData.validTime"
+                  type="number"
+                  class="form-input"
+                  min="60"
                   max="86400"
                 />
                 <div class="form-hint">{{ formatTime(formData.validTime) }}</div>
@@ -145,10 +145,10 @@
             <div class="form-row">
               <div class="form-group full-width">
                 <label class="form-label">Flag *</label>
-                <input 
-                  v-model="formData.flag" 
-                  type="text" 
-                  class="form-input" 
+                <input
+                  v-model="formData.flag"
+                  type="text"
+                  class="form-input"
                   placeholder="请输入完整的flag，例如：flag{this_is_a_sample_flag}"
                   maxlength="200"
                 />
@@ -156,19 +156,19 @@
               </div>
             </div>
           </div>
-          
+
           <!-- 导航按钮 -->
           <div class="card-footer">
-            <button 
-              v-if="currentStep > 1" 
-              class="nav-btn prev-btn" 
+            <button
+              v-if="currentStep > 1"
+              class="nav-btn prev-btn"
               @click="prevStep"
             >
               ← 上一步
             </button>
-            <button 
-              v-if="currentStep < 3" 
-              class="nav-btn next-btn" 
+            <button
+              v-if="currentStep < 3"
+              class="nav-btn next-btn"
               @click="nextStep"
               :disabled="!canProceed"
             >
@@ -185,19 +185,19 @@
             <h2>💡 需求输入</h2>
             <p>详细描述您的题目需求，AI将根据您的描述生成相应的CTF题目</p>
           </div>
-          
+
           <div class="form-body">
             <div class="form-group full-width">
               <label class="form-label">题目需求描述 *</label>
-              <textarea 
-                v-model="formData.requirements" 
-                class="form-textarea large" 
+              <textarea
+                v-model="formData.requirements"
+                class="form-textarea large"
                 placeholder="请详细描述您想要的CTF题目类型、知识点、解题方式等需求&#10;&#10;例如：Web安全题目，考察SQL注入，难度适中..."
                 rows="8"
               ></textarea>
               <div class="char-count">{{ formData.requirements.length }} 字符</div>
             </div>
-            
+
             <div class="requirements-tips">
               <h4>💡 写作建议：</h4>
               <ul>
@@ -209,19 +209,19 @@
               </ul>
             </div>
           </div>
-          
+
           <!-- 导航按钮 -->
           <div class="card-footer">
-            <button 
-              v-if="currentStep > 1" 
-              class="nav-btn prev-btn" 
+            <button
+              v-if="currentStep > 1"
+              class="nav-btn prev-btn"
               @click="prevStep"
             >
               ← 上一步
             </button>
-            <button 
-              v-if="currentStep < 3" 
-              class="nav-btn next-btn" 
+            <button
+              v-if="currentStep < 3"
+              class="nav-btn next-btn"
               @click="nextStep"
               :disabled="!canProceed"
             >
@@ -239,7 +239,7 @@
           <h3>🌐 网络拓扑配置</h3>
           <p>配置您的CTF题目网络环境，每个区域可以设置一个子网并添加多个设备</p>
         </div>
-        
+
         <div class="network-config-container">
           <!-- 内网区域 -->
           <div class="network-zone-config">
@@ -249,25 +249,25 @@
                 <span class="zone-name">内网区域</span>
               </div>
             </div>
-            
+
             <div class="zone-content">
               <!-- 子网配置 -->
               <div class="subnet-config">
                 <label class="subnet-label">子网地址段:</label>
-                <input 
-                  v-model="networkConfig.internal.subnet" 
-                  type="text" 
+                <input
+                  v-model="networkConfig.internal.subnet"
+                  type="text"
                   class="subnet-input"
                   placeholder="例如: 192.168.1.0/24"
                 />
               </div>
-              
+
               <!-- 设备列表 -->
               <div class="devices-section">
                 <div class="devices-header">
                   <span class="devices-title">设备列表 ({{ networkConfig.internal.devices.length }})</span>
-                  <button 
-                    class="add-device-btn" 
+                  <button
+                    class="add-device-btn"
                     @click="addDevice('internal')"
                     :disabled="!networkConfig.internal.subnet.trim()"
                   >
@@ -275,10 +275,10 @@
                     添加设备
                   </button>
                 </div>
-                
+
                 <div class="devices-list">
-                  <div 
-                    v-for="(device, index) in networkConfig.internal.devices" 
+                  <div
+                    v-for="(device, index) in networkConfig.internal.devices"
                     :key="device.id"
                     class="device-item"
                   >
@@ -294,7 +294,7 @@
                       <button class="delete-device-btn" @click="deleteDevice('internal', index)">删除</button>
                     </div>
                   </div>
-                  
+
                   <div v-if="networkConfig.internal.devices.length === 0" class="no-devices">
                     <div class="no-devices-icon">📱</div>
                     <p>暂无设备，点击"添加设备"开始配置</p>
@@ -312,25 +312,25 @@
                 <span class="zone-name">DMZ区域</span>
               </div>
             </div>
-            
+
             <div class="zone-content">
               <!-- 子网配置 -->
               <div class="subnet-config">
                 <label class="subnet-label">子网地址段:</label>
-                <input 
-                  v-model="networkConfig.dmz.subnet" 
-                  type="text" 
+                <input
+                  v-model="networkConfig.dmz.subnet"
+                  type="text"
                   class="subnet-input"
                   placeholder="例如: 10.0.1.0/24"
                 />
               </div>
-              
+
               <!-- 设备列表 -->
               <div class="devices-section">
                 <div class="devices-header">
                   <span class="devices-title">设备列表 ({{ networkConfig.dmz.devices.length }})</span>
-                  <button 
-                    class="add-device-btn" 
+                  <button
+                    class="add-device-btn"
                     @click="addDevice('dmz')"
                     :disabled="!networkConfig.dmz.subnet.trim()"
                   >
@@ -338,10 +338,10 @@
                     添加设备
                   </button>
                 </div>
-                
+
                 <div class="devices-list">
-                  <div 
-                    v-for="(device, index) in networkConfig.dmz.devices" 
+                  <div
+                    v-for="(device, index) in networkConfig.dmz.devices"
                     :key="device.id"
                     class="device-item"
                   >
@@ -357,7 +357,7 @@
                       <button class="delete-device-btn" @click="deleteDevice('dmz', index)">删除</button>
                     </div>
                   </div>
-                  
+
                   <div v-if="networkConfig.dmz.devices.length === 0" class="no-devices">
                     <div class="no-devices-icon">📱</div>
                     <p>暂无设备，点击"添加设备"开始配置</p>
@@ -375,25 +375,25 @@
                 <span class="zone-name">攻击区域</span>
               </div>
             </div>
-            
+
             <div class="zone-content">
               <!-- 子网配置 -->
               <div class="subnet-config">
                 <label class="subnet-label">子网地址段:</label>
-                <input 
-                  v-model="networkConfig.attack.subnet" 
-                  type="text" 
+                <input
+                  v-model="networkConfig.attack.subnet"
+                  type="text"
                   class="subnet-input"
                   placeholder="例如: 172.16.1.0/24"
                 />
               </div>
-              
+
               <!-- 设备列表 -->
               <div class="devices-section">
                 <div class="devices-header">
                   <span class="devices-title">设备列表 ({{ networkConfig.attack.devices.length }})</span>
-                  <button 
-                    class="add-device-btn" 
+                  <button
+                    class="add-device-btn"
                     @click="addDevice('attack')"
                     :disabled="!networkConfig.attack.subnet.trim()"
                   >
@@ -401,10 +401,10 @@
                     添加设备
                   </button>
                 </div>
-                
+
                 <div class="devices-list">
-                  <div 
-                    v-for="(device, index) in networkConfig.attack.devices" 
+                  <div
+                    v-for="(device, index) in networkConfig.attack.devices"
                     :key="device.id"
                     class="device-item"
                   >
@@ -420,7 +420,7 @@
                       <button class="delete-device-btn" @click="deleteDevice('attack', index)">删除</button>
                     </div>
                   </div>
-                  
+
                   <div v-if="networkConfig.attack.devices.length === 0" class="no-devices">
                     <div class="no-devices-icon">📱</div>
                     <p>暂无设备，点击"添加设备"开始配置</p>
@@ -430,17 +430,17 @@
             </div>
           </div>
         </div>
-        
+
         <!-- 导航按钮 -->
         <div class="card-footer">
-          <button 
-            class="nav-btn prev-btn" 
+          <button
+            class="nav-btn prev-btn"
             @click="prevStep"
           >
             ← 上一步
           </button>
-          <button 
-            class="nav-btn next-btn" 
+          <button
+            class="nav-btn next-btn"
             @click="nextStep"
             :disabled="!canProceed"
           >
@@ -457,7 +457,7 @@
           <h3>🎨 生成拓扑图</h3>
           <p>基于您的网络配置生成可视化拓扑图</p>
         </div>
-        
+
         <div class="topology-generation">
           <!-- 配置摘要 -->
           <div class="config-summary">
@@ -565,18 +565,18 @@
             </div>
           </div>
         </div>
-        
+
         <!-- 导航按钮 -->
         <div class="card-footer">
-          <button 
-            class="nav-btn prev-btn" 
+          <button
+            class="nav-btn prev-btn"
             @click="prevStep"
           >
             ← 上一步
           </button>
-          <button 
+          <button
             v-if="generationState === 'completed'"
-            class="nav-btn next-btn" 
+            class="nav-btn next-btn"
             @click="nextStep"
           >
             下一步 →
@@ -592,7 +592,7 @@
           <h2>🎉 部署完成</h2>
           <p>CTF题目部署已完成，可以进行后续操作</p>
         </div>
-        
+
         <div class="form-body">
           <div class="completion-content">
             <div class="completion-icon">✅</div>
@@ -600,7 +600,7 @@
             <p class="completion-description">
               您的CTF题目已成功创建并完成所有配置步骤。
             </p>
-            
+
             <!-- 部署摘要信息 -->
             <div class="deployment-summary">
               <h4>📋 部署摘要</h4>
@@ -631,7 +631,7 @@
                 </div>
               </div>
             </div>
-            
+
             <!-- 占位内容区域 -->
             <div class="placeholder-content">
               <h4>⏳ 待完善功能</h4>
@@ -639,18 +639,18 @@
             </div>
           </div>
         </div>
-        
+
         <!-- 导航按钮 -->
         <div class="card-footer">
-          <button 
-            class="nav-btn prev-btn" 
+          <button
+            class="nav-btn prev-btn"
             @click="prevStep"
           >
             ← 上一步
           </button>
-          <button 
+          <button
             v-if="generationState === 'completed'"
-            class="nav-btn next-btn" 
+            class="nav-btn next-btn"
             @click="nextStep"
           >
             下一步 →
@@ -666,11 +666,11 @@
           <h3>🐳 生成Docker Compose</h3>
           <p>根据网络拓扑配置生成Docker Compose部署文件</p>
         </div>
-        
+
         <div class="docker-generation">
           <!-- 生成状态区域 -->
           <div class="generation-area">
-            
+
             <!-- 第一阶段：准备生成 -->
             <div v-if="dockerGenerationState === 'idle'" class="generation-idle">
               <div class="ready-icon">🚀</div>
@@ -752,18 +752,18 @@
             </div>
           </div>
         </div>
-        
+
         <!-- 导航按钮 -->
         <div class="card-footer">
-          <button 
-            class="nav-btn prev-btn" 
+          <button
+            class="nav-btn prev-btn"
             @click="prevStep"
           >
             ← 上一步
           </button>
-          <button 
+          <button
             v-if="dockerGenerationState === 'completed'"
-            class="nav-btn next-btn" 
+            class="nav-btn next-btn"
             @click="nextStep"
           >
             下一步 →
@@ -779,7 +779,7 @@
           <h3>🎉 部署完成</h3>
           <p>您的CTF题目已成功部署</p>
         </div>
-        
+
         <div class="completion-summary">
           <div class="summary-section">
             <h4>📋 部署摘要</h4>
@@ -806,13 +806,13 @@
               </div>
             </div>
           </div>
-          
+
           <div class="success-message">
             <div class="success-icon">✅</div>
             <h4>部署成功完成！</h4>
             <p>您的CTF题目已成功生成并准备就绪。</p>
           </div>
-          
+
           <div class="action-buttons">
             <button class="action-btn primary-btn" @click="viewDeployment">
               👁️ 查看部署详情
@@ -826,20 +826,20 @@
     </div>
 
     <!-- 子网配置弹窗 -->
-    <SubnetConfigDialog 
+    <SubnetConfigDialog
       v-model="showSubnetDialog"
       @confirm="handleSubnetConfig"
     />
-    
+
     <!-- 设备配置弹窗 -->
-    <DeviceConfigDialog 
+    <DeviceConfigDialog
       v-model="showDeviceDialog"
       :device="currentEditingDevice.device"
       @confirm="handleDeviceConfig"
     />
-    
+
     <!-- 节点配置弹窗（旧版本，保留兼容） -->
-    <NodeConfigDialog 
+    <NodeConfigDialog
       v-model="showNodeDialog"
       :node="currentConfigNode"
       @confirm="handleNodeConfig"
@@ -859,8 +859,8 @@ interface Tag {
   tag_id: number;
   tag: string;
 }
-import { 
-  inputScenario, 
+import {
+  inputScenario,
   inputDevices,
   generateTopology,
   generateTopologyImage,
@@ -893,11 +893,11 @@ const TopologyNode = defineComponent({
   },
   template: `
     <div class="topology-node-container">
-      <div 
+      <div
         class="topology-node"
         :class="{
           'zone-internal': zone === 'internal',
-          'zone-dmz': zone === 'dmz', 
+          'zone-dmz': zone === 'dmz',
           'zone-attack': zone === 'attack',
           'add': node.type === 'add',
           'subnet': node.type === 'subnet',
@@ -922,13 +922,13 @@ const TopologyNode = defineComponent({
           <div class="node-details">{{ node.label || node.name || 'Node' }}</div>
         </div>
       </div>
-      
+
       <!-- 显示子节点 -->
       <div v-if="node.children && node.children.length > 0" class="node-connections">
         <div v-for="child in node.children" :key="child.id" class="child-node">
           <div class="connection-line"></div>
-          <TopologyNode 
-            :node="child" 
+          <TopologyNode
+            :node="child"
             :zone="child.zone || zone"
             @add-branch="$emit('add-branch', $event)"
             @configure="$emit('configure', $event)"
@@ -949,14 +949,14 @@ const TopologyNode = defineComponent({
   }
 })
 
-// 添加节点按钮组件  
+// 添加节点按钮组件
 const AddNodeButton = defineComponent({
   props: {
     zone: String
   },
   emits: ['add'],
   template: `
-    <div 
+    <div
       class="topology-node add"
       :class="{
         'zone-internal': zone === 'internal',
@@ -978,7 +978,7 @@ const SubnetConfigDialog = defineComponent({
   emits: ['update:modelValue', 'confirm'],
   setup(props, { emit }) {
     const subnet = ref('')
-    
+
     const handleConfirm = () => {
       if (subnet.value.trim()) {
         emit('confirm', { subnet: subnet.value })
@@ -986,12 +986,12 @@ const SubnetConfigDialog = defineComponent({
         emit('update:modelValue', false)
       }
     }
-    
+
     const handleCancel = () => {
       subnet.value = ''
       emit('update:modelValue', false)
     }
-    
+
     return { subnet, handleConfirm, handleCancel }
   },
   template: `
@@ -999,9 +999,9 @@ const SubnetConfigDialog = defineComponent({
       <div class="dialog-content">
         <h3>配置子网网段</h3>
         <div class="form-group">
-          <input 
+          <input
             v-model="subnet"
-            type="text" 
+            type="text"
             class="form-input"
             placeholder="xxx.xxx.xxx.xxx"
             @keyup.enter="handleConfirm"
@@ -1028,16 +1028,16 @@ const DeviceConfigDialog = defineComponent({
     const system = ref('')
     const ip = ref('')
     const image = ref('')
-    
+
     // 设备类型选项（严格按照图2）
     const deviceTypeOptions = [
       'Web服务器',
-      '数据库服务器', 
+      '数据库服务器',
       'ftp服务器',
       'Ad域控',
       '攻击机'
     ]
-    
+
     // 系统选项（严格按照图2格式）
     const systemOptions = {
       'Web服务器': ['apache+php', 'apache+python', 'apache+java'],
@@ -1046,7 +1046,7 @@ const DeviceConfigDialog = defineComponent({
       'Ad域控': ['Linux', 'windows'],
       '攻击机': ['kali', 'windows']
     }
-    
+
     // 镜像选项（严格按照图2格式）
     const imageOptions = {
       'apache+php': ['apache:php'],
@@ -1061,7 +1061,7 @@ const DeviceConfigDialog = defineComponent({
       'windows': ['windows:ad'],
       'kali': ['Kalilinux/kali-rolling']
     }
-    
+
     // 监听device prop变化，更新表单数据
     watch(() => props.device, (newDevice) => {
       if (newDevice) {
@@ -1071,58 +1071,58 @@ const DeviceConfigDialog = defineComponent({
         image.value = newDevice.image || ''
       }
     }, { immediate: true })
-    
+
     // 监听设备类型变化，自动更新系统和镜像
     watch(deviceType, (newType) => {
       if (newType && systemOptions[newType]) {
         system.value = systemOptions[newType][0] || ''
       }
     })
-    
+
     watch(system, (newSystem) => {
       if (newSystem && imageOptions[newSystem]) {
         image.value = imageOptions[newSystem][0] || ''
       }
     })
-    
+
     const validateIP = (ip) => {
       const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
       return ipRegex.test(ip)
     }
-    
+
     const handleConfirm = () => {
       if (!deviceType.value || !system.value || !ip.value || !image.value) {
         ElMessage.error('请填写所有必填项')
         return
       }
-      
+
       if (!validateIP(ip.value)) {
         ElMessage.error('请输入有效的IP地址格式')
         return
       }
-      
+
       emit('confirm', {
         type: deviceType.value,
         system: system.value,
         ip: ip.value,
         image: image.value
       })
-      
+
       resetForm()
     }
-    
+
     const handleCancel = () => {
       resetForm()
       emit('update:modelValue', false)
     }
-    
+
     const resetForm = () => {
       deviceType.value = ''
       system.value = ''
       ip.value = ''
       image.value = ''
     }
-    
+
     return {
       deviceType,
       system,
@@ -1142,7 +1142,7 @@ const DeviceConfigDialog = defineComponent({
           <h3>⚙️ 设备配置</h3>
           <button class="close-btn" @click="handleCancel">×</button>
         </div>
-        
+
         <div class="dialog-body">
           <div class="form-row">
             <div class="form-group">
@@ -1154,7 +1154,7 @@ const DeviceConfigDialog = defineComponent({
                 </option>
               </select>
             </div>
-            
+
             <div class="form-group">
               <label class="form-label">系统/服务 <span class="required">*</span></label>
               <select v-model="system" class="form-select" :disabled="!deviceType">
@@ -1165,18 +1165,18 @@ const DeviceConfigDialog = defineComponent({
               </select>
             </div>
           </div>
-          
+
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">IP地址 <span class="required">*</span></label>
-              <input 
+              <input
                 v-model="ip"
-                type="text" 
+                type="text"
                 class="form-input"
                 placeholder="例如: 192.168.1.10"
               />
             </div>
-            
+
             <div class="form-group">
               <label class="form-label">Docker镜像 <span class="required">*</span></label>
               <select v-model="image" class="form-select" :disabled="!system">
@@ -1187,7 +1187,7 @@ const DeviceConfigDialog = defineComponent({
               </select>
             </div>
           </div>
-          
+
           <div class="form-tips">
             <div class="tip-item">
               <span class="tip-icon">💡</span>
@@ -1199,7 +1199,7 @@ const DeviceConfigDialog = defineComponent({
             </div>
           </div>
         </div>
-        
+
         <div class="dialog-footer">
           <button class="btn btn-secondary" @click="handleCancel">
             <span class="btn-icon">❌</span>
@@ -1227,15 +1227,15 @@ const NodeConfigDialog = defineComponent({
     const system = ref('apache+php')
     const ip = ref('')
     const image = ref('apache:php')
-    
+
     const nodeTypeOptions = [
       'Web服务器',
-      '数据库服务器', 
+      '数据库服务器',
       'ftp服务器',
       'Ad域控',
       '攻击机'
     ]
-    
+
     const systemOptions = {
       'Web服务器': ['apache+php', 'apache+python', 'apache+java'],
       '数据库服务器': ['mysql','oceanbase','MongoDB'],
@@ -1243,7 +1243,7 @@ const NodeConfigDialog = defineComponent({
       'Ad域控': ['Linux', 'windows'],
       '攻击机': ['kali', 'windows']
     }
-    
+
     const imageOptions = {
       'apache+php': ['apache:php'],
       'apache+python': ['apache:python'],
@@ -1257,23 +1257,23 @@ const NodeConfigDialog = defineComponent({
       'windows': ['windows:ad'],
       'kali': ['Kalilinux/kali-rolling']
     }
-    
+
     const validateIP = (ip) => {
       const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
       return ipRegex.test(ip)
     }
-    
+
     const handleConfirm = () => {
       if (!nodeType.value || !system.value || !ip.value || !image.value) {
         ElMessage.error('请填写所有必填项')
         return
       }
-      
+
       if (!validateIP(ip.value)) {
         ElMessage.error('请输入有效的IP地址格式')
         return
       }
-      
+
       emit('confirm', {
         nodeType: nodeType.value,
         system: system.value,
@@ -1283,19 +1283,19 @@ const NodeConfigDialog = defineComponent({
       resetForm()
       emit('update:modelValue', false)
     }
-    
+
     const handleCancel = () => {
       resetForm()
       emit('update:modelValue', false)
     }
-    
+
     const resetForm = () => {
       nodeType.value = 'Web服务器'
       system.value = 'apache+php'
       ip.value = ''
       image.value = 'apache:php'
     }
-    
+
     // 当节点类型改变时，自动更新系统选项
     const updateSystemOptions = () => {
       const systems = systemOptions[nodeType.value]
@@ -1303,7 +1303,7 @@ const NodeConfigDialog = defineComponent({
         system.value = systems[0]
       }
     }
-    
+
     // 当系统改变时，自动更新镜像选项
     const updateImageOptions = () => {
       const images = imageOptions[system.value]
@@ -1311,23 +1311,23 @@ const NodeConfigDialog = defineComponent({
         image.value = images[0]
       }
     }
-    
+
     // 监听节点类型变化
     watch(nodeType, updateSystemOptions)
-    
+
     // 监听系统变化
     watch(system, updateImageOptions)
-    
-    return { 
-      nodeType, 
-      system, 
-      ip, 
-      image, 
-      nodeTypeOptions, 
+
+    return {
+      nodeType,
+      system,
+      ip,
+      image,
+      nodeTypeOptions,
       systemOptions,
       imageOptions,
-      handleConfirm, 
-      handleCancel 
+      handleConfirm,
+      handleCancel
     }
   },
   template: `
@@ -1352,9 +1352,9 @@ const NodeConfigDialog = defineComponent({
         </div>
         <div class="form-group">
           <label>地址:</label>
-          <input 
+          <input
             v-model="ip"
-            type="text" 
+            type="text"
             class="form-input"
             placeholder="xxx.xxx.xxx.xxx"
           />
@@ -1479,7 +1479,7 @@ const getAllConfiguredNodes = () => {
     }
     return configuredNodes
   }
-  
+
   const allZones = [...topology.value.internal, ...topology.value.dmz, ...topology.value.attack]
   return findConfiguredNodes(allZones)
 }
@@ -1501,7 +1501,7 @@ const dockerGenerationError = ref('')
 // 计算属性
 const canProceed = computed(() => {
   if (currentStep.value === 1) {
-    return formData.value.title.trim() !== '' && 
+    return formData.value.title.trim() !== '' &&
            formData.value.description.trim() !== '' &&
            formData.value.flag.trim() !== '' &&
            formData.value.tagId !== '' &&
@@ -1553,7 +1553,7 @@ const nextStep = async () => {
 
     currentStep.value++
     ElMessage.success(`进入第${currentStep.value}步`)
-    
+
   } catch (error) {
     console.error('步骤切换失败:', error)
     ElMessage.error('操作失败，请重试')
@@ -1576,7 +1576,7 @@ const createQuestionStep = async () => {
   const response = await createQuestion(questionData)
   console.log('API Response:', response)
   console.log('Response data:', response.data)
-  
+
   if (response && response.code === 200 && response.data?.question_id) {
     questionId.value = response.data.question_id
     deployId.value = response.data.question_id // 使用question_id作为deploy_id
@@ -1618,14 +1618,14 @@ const collectDeviceConfigStep = async () => {
 
   // 收集当前网络配置中的所有设备数据
   const devices = []
-  
+
   // 定义网络分区映射
   const zoneMapping = {
     'internal': '内网',
-    'dmz': 'DMZ', 
+    'dmz': 'DMZ',
     'attack': '攻击区'
   }
-  
+
   // 遍历所有网络分区
   for (const [zoneKey, zoneConfig] of Object.entries(networkConfig.value)) {
     if (zoneConfig.devices && zoneConfig.devices.length > 0) {
@@ -1652,7 +1652,7 @@ const collectDeviceConfigStep = async () => {
 
   console.log('提交设备配置:', deviceData)
   const response = await inputDevices(deviceData)
-  
+
   if (response.code === 200) {
     ElMessage.success('设备配置提交成功')
     console.log('Device config submitted for deploy_id:', deployId.value)
@@ -1680,7 +1680,7 @@ const submitForm = () => {
 const getDifficultyText = (difficulty) => {
   const difficultyMap = {
     1: '入门',
-    2: '简单', 
+    2: '简单',
     3: '中等',
     4: '困难',
     5: '极难'
@@ -1738,7 +1738,7 @@ const deleteDevice = (zone, index) => {
 
 const handleDeviceConfig = (deviceData) => {
   const { zone, index } = currentEditingDevice.value
-  
+
   if (index === -1) {
     // 添加新设备
     const newDevice = {
@@ -1755,7 +1755,7 @@ const handleDeviceConfig = (deviceData) => {
     }
     ElMessage.success('设备更新成功')
   }
-  
+
   showDeviceDialog.value = false
 }
 
@@ -1774,20 +1774,20 @@ const collectDeviceConfigStepNew = async () => {
   try {
     // 将新的网络配置转换为旧的拓扑格式以保持兼容性
     const convertedTopology = convertNetworkConfigToTopology()
-    
+
     // 更新旧的topology数据结构以保持兼容
     topology.value = convertedTopology
-    
+
     // 转换为API需要的格式
     const devices = convertTopologyToDevices()
-    
+
     if (devices.length === 0) {
       ElMessage.warning('请至少配置一个设备')
       throw new Error('No devices configured')
     }
 
     console.log('收集的设备配置数据:', devices)
-    
+
     // 调用设备配置API
     const requestData: InputDevicesRequest = {
       deploy_id: deployId.value!,
@@ -1824,7 +1824,7 @@ const convertNetworkConfigToTopology = () => {
   // 遍历每个网络区域
   Object.keys(networkConfig.value).forEach(zone => {
     const config = networkConfig.value[zone]
-    
+
     if (config.subnet.trim() && config.devices.length > 0) {
       // 为每个区域创建一个子网节点
       const subnetNode = {
@@ -1834,7 +1834,7 @@ const convertNetworkConfigToTopology = () => {
         zone: zone,
         children: []
       }
-      
+
       // 将设备作为子节点添加到子网下
       config.devices.forEach((device, index) => {
         const deviceNode = {
@@ -1849,7 +1849,7 @@ const convertNetworkConfigToTopology = () => {
         }
         subnetNode.children.push(deviceNode)
       })
-      
+
       convertedTopology[zone].push(subnetNode)
     }
   })
@@ -1890,62 +1890,62 @@ const startTopologyGeneration = async () => {
     generationState.value = 'processing'
     processingProgress.value = 0
     generationError.value = ''
-    
+
     ElMessage.info('开始生成拓扑图，整个过程可能需要1-3分钟，请耐心等待...')
-    
+
     // 添加详细的调试信息
     console.log('=== 拓扑生成流程开始 ===')
     console.log('当前deployId:', deployId.value)
     console.log('当前拓扑数据:', JSON.stringify(topology.value, null, 2))
-    
+
     // 第一步：发送场景描述 (20%) - 快速完成
     console.log('步骤1: 发送场景描述...')
     await sendScenarioDescription()
     processingProgress.value = 20
     console.log('步骤1: 场景描述发送成功')
-    
+
     // 第二步：发送设备信息 (40%) - 快速完成
     console.log('步骤2: 发送设备信息...')
     await sendDevicesInfo()
     processingProgress.value = 40
     console.log('步骤2: 设备信息发送成功')
-    
+
     // 第三步：生成拓扑序列 (70%) - 耗时1-2分钟，AI分析需求
     console.log('步骤3: 生成拓扑序列...')
     await generateTopologySequence()
     processingProgress.value = 70
     console.log('步骤3: 拓扑序列生成成功')
-    
+
     // 切换到渲染阶段
     generationState.value = 'rendering'
-    
+
     // 第四步：生成拓扑图像 (100%) - 耗时10-30秒，图像渲染
     const imageResult = await generateTopologyImageFile()
     processingProgress.value = 100
-    
+
     // 完成
     generationState.value = 'completed'
     generatedTopologyImage.value = imageResult.topology_url
     ElMessage.success('拓扑图生成完成！')
-    
+
   } catch (error: any) {
     console.error('=== 拓扑图生成失败 ===')
     console.error('错误详情:', error)
     console.error('当前deployId:', deployId.value)
     console.error('当前步骤进度:', processingProgress.value)
-    
+
     // 提供更具体的错误信息
     let errorMessage = '生成拓扑图时发生未知错误'
     if (error.message) {
       errorMessage = error.message
     }
-    
+
     // 根据HTTP状态码提供更友好的错误信息
     if (error.response) {
       const status = error.response.status
       console.error('HTTP状态码:', status)
       console.error('响应数据:', error.response.data)
-      
+
       if (status === 404) {
         errorMessage = '后端服务未找到对应的部署记录，请检查deployId是否正确'
       } else if (status === 500) {
@@ -1954,7 +1954,7 @@ const startTopologyGeneration = async () => {
         errorMessage = '权限不足，请检查登录状态'
       }
     }
-    
+
     generationState.value = 'failed'
     generationError.value = errorMessage
     ElMessage.error('拓扑图生成失败: ' + errorMessage)
@@ -1966,21 +1966,21 @@ const sendScenarioDescription = async () => {
   if (!deployId.value) {
     throw new Error('部署ID不存在')
   }
-  
+
   const scenarioData: InputScenarioRequest = {
     deploy_id: deployId.value,
     scenario: formData.value.requirements
   }
-  
+
   console.log('发送场景描述:', scenarioData)
   const response = await inputScenario(scenarioData)
   console.log('场景描述响应:', response)
-  
+
   // 检查响应是否存在且包含正确的结构
   if (!response || response.code !== 200) {
     throw new Error(response?.message || '发送场景描述失败')
   }
-  
+
   console.log('场景描述发送成功')
 }
 
@@ -1989,23 +1989,23 @@ const sendDevicesInfo = async () => {
   if (!deployId.value) {
     throw new Error('部署ID不存在')
   }
-  
+
   // 将拓扑数据转换为API所需的格式
   const devices: DeviceZone[] = convertTopologyToDevices()
-  
+
   const devicesData: InputDevicesRequest = {
     deploy_id: deployId.value,
     devices: devices
   }
-  
+
   console.log('发送设备信息:', devicesData)
   const response = await inputDevices(devicesData)
   console.log('设备信息响应:', response)
-  
+
   if (!response || response.code !== 200) {
     throw new Error(response?.message || '发送设备信息失败')
   }
-  
+
   console.log('设备信息发送成功')
 }
 
@@ -2014,27 +2014,27 @@ const generateTopologySequence = async () => {
   if (!deployId.value) {
     throw new Error('部署ID不存在')
   }
-  
+
   const topologyData: GenerateTopologyRequest = {
     deploy_id: deployId.value
   }
-  
+
   console.log('开始生成拓扑序列，Deploy ID:', deployId.value)
   console.log('发送的数据:', topologyData)
   console.log('注意：此步骤可能需要1-2分钟，AI正在分析需求并生成拓扑...')
-  
+
   try {
     // 增加超时时间，因为这一步可能需要1-2分钟
     const response = await generateTopology(topologyData)
     console.log('拓扑序列生成响应:', response)
-    
+
     if (!response || response.code !== 200) {
       console.error('拓扑序列生成失败，响应码:', response?.code)
       console.error('错误消息:', response?.message)
       console.error('完整响应数据:', response)
       throw new Error(response?.message || '生成拓扑序列失败')
     }
-    
+
     console.log('拓扑序列生成成功')
   } catch (error: any) {
     console.error('调用生成拓扑序列API时发生错误:', error)
@@ -2042,7 +2042,7 @@ const generateTopologySequence = async () => {
     console.error('错误类型:', error.name)
     console.error('错误码:', error.code)
     console.error('完整错误对象:', error)
-    
+
     // 重要：区分HTTP错误和业务逻辑错误
     if (error.businessError) {
       // 这是业务逻辑错误（后端返回HTTP 200但code不是200）
@@ -2050,7 +2050,7 @@ const generateTopologySequence = async () => {
       console.error('响应状态码:', error.response?.status)
       console.error('业务错误码:', error.response?.data?.code)
       console.error('业务错误信息:', error.response?.data?.message)
-      
+
       throw new Error(`生成拓扑序列失败: ${error.message}`)
     } else if (error.response) {
       // 这是真正的HTTP错误（404, 500, 504等）
@@ -2059,7 +2059,7 @@ const generateTopologySequence = async () => {
       console.error('HTTP错误状态:', status)
       console.error('错误响应数据:', JSON.stringify(data, null, 2))
       console.error('响应头:', error.response.headers)
-      
+
       if (status === 404) {
         throw new Error(`部署记录不存在 (ID: ${deployId.value})，请确认前面的步骤是否成功保存数据`)
       } else if (status === 500) {
@@ -2087,24 +2087,24 @@ const generateTopologyImageFile = async () => {
   if (!deployId.value) {
     throw new Error('部署ID不存在')
   }
-  
+
   const imageData: GenerateTopologyRequest = {
     deploy_id: deployId.value
   }
-  
+
   console.log('开始生成拓扑图像，Deploy ID:', deployId.value)
   const response = await generateTopologyImage(imageData)
   console.log('拓扑图像生成响应:', response)
-  
+
   if (!response || response.code !== 200) {
     console.error('拓扑图像生成失败，响应:', response)
     throw new Error(response?.message || '生成拓扑图像失败')
   }
-  
+
   // 获取拓扑图像URL
   const imageUrl = getTopologyImageUrl(deployId.value)
   console.log('拓扑图像URL:', imageUrl)
-  
+
   return {
     topology_url: imageUrl
   }
@@ -2113,48 +2113,48 @@ const generateTopologyImageFile = async () => {
 // 将拓扑数据转换为API所需的设备格式
 const convertTopologyToDevices = (): DeviceZone[] => {
   const devices: DeviceZone[] = []
-  
+
   // 直接从 networkConfig 转换数据
   Object.keys(networkConfig.value).forEach(zone => {
     const config = networkConfig.value[zone]
-    
+
     if (config.subnet.trim() && config.devices.length > 0) {
       const targetMachines: TargetMachine[] = []
-      
+
       // 转换每个设备
       config.devices.forEach(device => {
         const machine: TargetMachine = {
           machine_type: device.type || 'Web服务器',
-          system: device.system || 'apache+php', 
+          system: device.system || 'apache+php',
           ip_address: device.ip || '自动分配',
           image: device.image || 'apache:php'
         }
         targetMachines.push(machine)
       })
-      
+
       const zoneNames = {
         'internal': '内网区',
         'dmz': 'DMZ区',
         'attack': '攻击区'
       }
-      
+
       const deviceZone: DeviceZone = {
         zone: zoneNames[zone as keyof typeof zoneNames] || zone,
         subnet: config.subnet,
         target_machines: targetMachines
       }
-      
+
       devices.push(deviceZone)
     }
   })
-  
+
   return devices
 }
 
 // 将单个区域的节点转换为设备信息
 const convertZoneToDevices = (nodes: any[], zone: string, defaultSubnet: string): DeviceZone | null => {
   const targetMachines: TargetMachine[] = []
-  
+
   const processNodes = (nodeList: any[]) => {
     for (const node of nodeList) {
       if (node.configured && node.type === 'configured') {
@@ -2166,26 +2166,26 @@ const convertZoneToDevices = (nodes: any[], zone: string, defaultSubnet: string)
         }
         targetMachines.push(machine)
       }
-      
+
       // 递归处理子节点
       if (node.children && node.children.length > 0) {
         processNodes(node.children)
       }
     }
   }
-  
+
   processNodes(nodes)
-  
+
   if (targetMachines.length === 0) {
     return null
   }
-  
+
   const zoneNames = {
     'internal': '内网区',
-    'dmz': 'DMZ区', 
+    'dmz': 'DMZ区',
     'attack': '攻击区'
   }
-  
+
   return {
     zone: zoneNames[zone as keyof typeof zoneNames] || zone,
     subnet: defaultSubnet,
@@ -2198,19 +2198,19 @@ const downloadTopology = () => {
     ElMessage.error('没有可下载的拓扑图')
     return
   }
-  
+
   try {
     // 创建下载链接
     const link = document.createElement('a')
     link.href = generatedTopologyImage.value
     link.download = `topology_${deployId.value || 'generated'}.png`
     link.target = '_blank'
-    
+
     // 触发下载
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    
+
     ElMessage.success('拓扑图下载已开始')
   } catch (error) {
     console.error('下载失败:', error)
@@ -2234,26 +2234,26 @@ const checkDeployStatus = () => {
   console.log('当前questionId:', questionId.value)
   console.log('题目数据:', JSON.stringify(formData.value, null, 2))
   console.log('拓扑数据:', JSON.stringify(topology.value, null, 2))
-  
+
   // 检查是否有配置的设备
   const devices = convertTopologyToDevices()
   console.log('转换后的设备数据:', JSON.stringify(devices, null, 2))
-  
+
   if (!deployId.value) {
     ElMessage.warning('❌ 部署ID不存在，请确保已完成前面的步骤')
     return
   }
-  
+
   if (devices.length === 0) {
     ElMessage.warning('❌ 没有配置任何设备，请先配置网络设备')
     return
   }
-  
+
   if (!formData.value.requirements) {
     ElMessage.warning('❌ 缺少场景描述，请在第一步中添加需求描述')
     return
   }
-  
+
   ElMessage.success('✅ 基础检查通过，deployId和设备数据都存在')
 }
 
@@ -2268,30 +2268,30 @@ const startDockerGeneration = async () => {
     // 重置状态
     dockerGenerationState.value = 'generating'
     dockerGenerationError.value = ''
-    
+
     ElMessage.info('开始生成Docker Compose文件，请稍候...')
-    
+
     if (!deployId.value) {
       throw new Error('部署ID不存在')
     }
-    
+
     const requestData: GenerateTopologyRequest = {
       deploy_id: deployId.value
     }
-    
+
     console.log('开始生成Docker Compose，Deploy ID:', deployId.value)
     const response = await generateDockerCompose(requestData)
     console.log('Docker Compose生成响应:', response)
-    
+
     if (!response || response.code !== 200) {
       throw new Error(response?.message || '生成Docker Compose文件失败')
     }
-    
+
     // 模拟获取Docker Compose内容（实际应该从API获取）
     dockerComposeContent.value = generateSampleDockerCompose()
     dockerGenerationState.value = 'completed'
     ElMessage.success('Docker Compose文件生成完成！')
-    
+
   } catch (error: any) {
     console.error('Docker Compose生成失败:', error)
     dockerGenerationState.value = 'failed'
@@ -2304,7 +2304,7 @@ const generateSampleDockerCompose = () => {
   // 根据网络配置生成示例Docker Compose内容
   const services = {}
   let portCounter = 8080
-  
+
   Object.keys(networkConfig.value).forEach(zone => {
     const config = networkConfig.value[zone]
     if (config.devices && config.devices.length > 0) {
@@ -2328,7 +2328,7 @@ const generateSampleDockerCompose = () => {
       })
     }
   })
-  
+
   const networks = {}
   Object.keys(networkConfig.value).forEach(zone => {
     const config = networkConfig.value[zone]
@@ -2343,7 +2343,7 @@ const generateSampleDockerCompose = () => {
       }
     }
   })
-  
+
   return `version: '3.8'
 
 services:
@@ -2373,7 +2373,7 @@ const copyDockerContent = () => {
     ElMessage.error('没有可复制的内容')
     return
   }
-  
+
   try {
     navigator.clipboard.writeText(dockerComposeContent.value).then(() => {
       ElMessage.success('Docker Compose内容已复制到剪贴板')
@@ -2398,7 +2398,7 @@ const downloadDockerFile = () => {
     ElMessage.error('没有可下载的内容')
     return
   }
-  
+
   try {
     const blob = new Blob([dockerComposeContent.value], { type: 'text/yaml' })
     const url = URL.createObjectURL(blob)
@@ -2409,7 +2409,7 @@ const downloadDockerFile = () => {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-    
+
     ElMessage.success('Docker Compose文件下载已开始')
   } catch (error) {
     console.error('下载失败:', error)
@@ -2430,7 +2430,7 @@ const viewDeployment = () => {
   // 查看部署详情的逻辑
   console.log('查看部署详情')
   ElMessage.info('部署详情功能将在后续版本中实现')
-  
+
   // 这里可以跳转到部署详情页面或打开详情弹窗
   // 例如：router.push(`/deployments/${deployId.value}`)
 }
@@ -2438,7 +2438,7 @@ const viewDeployment = () => {
 const createNew = () => {
   // 创建新题目的逻辑
   console.log('创建新题目')
-  
+
   // 重置所有表单数据
   formData.value = {
     title: '',
@@ -2451,7 +2451,7 @@ const createNew = () => {
     maxAttempts: 20,
     requirements: ''
   }
-  
+
   // 重置网络配置
   networkConfig.value = {
     internal: {
@@ -2467,14 +2467,14 @@ const createNew = () => {
       devices: []
     }
   }
-  
+
   // 重置拓扑数据
   topology.value = {
     internal: [],
     dmz: [],
     attack: []
   }
-  
+
   // 重置所有状态
   currentStep.value = 1
   questionId.value = null
@@ -2486,7 +2486,7 @@ const createNew = () => {
   generationError.value = ''
   dockerGenerationError.value = ''
   processingProgress.value = 0
-  
+
   ElMessage.success('已重置所有数据，可以开始创建新题目')
 }
 
@@ -2507,7 +2507,7 @@ const addInitialNode = (zone) => {
 
 const addBranch = (parentNode) => {
   const nodeId = ++nodeIdCounter.value
-  
+
   // 如果父节点是"加号"节点，转换为子网配置节点
   if (parentNode.type === 'add') {
     parentNode.type = 'subnet'
@@ -2547,7 +2547,7 @@ const handleSubnetConfig = (subnetData) => {
     currentSubnetConfig.value.subnet = subnetData.subnet
     currentSubnetConfig.value.label = subnetData.subnet
     currentSubnetConfig.value.type = 'subnet-configured'
-    
+
     // 添加具体配置节点
     const configNode = {
       id: ++nodeIdCounter.value,
@@ -2559,7 +2559,7 @@ const handleSubnetConfig = (subnetData) => {
       label: '具体配置'
     }
     currentSubnetConfig.value.children.push(configNode)
-    
+
     // 添加新的"加号"节点用于继续扩展
     const addNode = {
       id: ++nodeIdCounter.value,
@@ -2570,7 +2570,7 @@ const handleSubnetConfig = (subnetData) => {
       parent: currentSubnetConfig.value.id
     }
     currentSubnetConfig.value.children.push(addNode)
-    
+
     console.log('Configured subnet:', currentSubnetConfig.value)
     logTopology()
   }
@@ -2584,15 +2584,15 @@ const handleNodeConfig = (nodeData) => {
     currentConfigNode.value.configured = true
     currentConfigNode.value.type = 'configured'
     currentConfigNode.value.label = `${nodeData.nodeType}\n${nodeData.system}\n${nodeData.ip}`
-    
+
     console.log('Configured node:', currentConfigNode.value)
-    
+
     // 如果当前节点是父级节点的唯一子节点，且父级还有空间，添加新的扩展节点
     const parentZone = topology.value[currentConfigNode.value.zone]
     const parentNode = findNodeById(parentZone, currentConfigNode.value.parent)
-    
+
     console.log('Found parent node:', parentNode)
-    
+
     if (parentNode && parentNode.children.length < 5) { // 限制每个分支最多5个子节点
       const addNode = {
         id: ++nodeIdCounter.value,
@@ -2605,7 +2605,7 @@ const handleNodeConfig = (nodeData) => {
       parentNode.children.push(addNode)
       console.log('Added new add node:', addNode)
     }
-    
+
     logTopology()
   }
   showNodeDialog.value = false
@@ -2703,12 +2703,12 @@ const findNodeById = (nodes, targetId) => {
   margin-top: 6px;
   font-size: 0.8rem;
   font-weight: 500;
-  color: #6c757d;
+  color: #e2ebf7;
   transition: all 0.3s ease;
 }
 
 .progress-step.active .step-label {
-  color: #3b82f6;
+  color: #6eafff;
   font-weight: 600;
 }
 
@@ -3348,15 +3348,15 @@ const findNodeById = (nodes, targetId) => {
     flex-direction: column;
     gap: 16px;
   }
-  
+
   .zone-label {
     width: auto;
   }
-  
+
   .topology-nodes {
     justify-content: center;
   }
-  
+
   .dialog-content {
     min-width: 300px;
     margin: 20px;
@@ -4667,17 +4667,17 @@ const findNodeById = (nodes, targetId) => {
     gap: 12px;
     align-items: flex-start;
   }
-  
+
   .file-actions {
     width: 100%;
     justify-content: flex-end;
   }
-  
+
   .action-buttons {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .action-btn {
     width: 100%;
     max-width: 300px;

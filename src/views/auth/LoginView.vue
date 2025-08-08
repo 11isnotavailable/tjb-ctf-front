@@ -2,45 +2,45 @@
   <div class="login-page" :class="{'dark-theme': isDarkTheme, 'light-theme': !isDarkTheme}">
     <!-- Silk画布背景效果 -->
     <SilkCanvas />
-    
+
     <div class="login-container">
       <div class="login-form">
         <!-- 打字机效果的标题 -->
-        <TypewriterText 
+        <TypewriterText
           :key="'login-' + currentTheme"
           text="▶ TJB-CTF平台登录"
-          :speed="80" 
-          tag="h2" 
-          class="title" 
+          :speed="80"
+          tag="h2"
+          class="title"
         />
-        
+
         <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleSubmit">
           <el-form-item prop="email">
-            <el-input 
-              v-model="form.email" 
-              placeholder="邮箱" 
+            <el-input
+              v-model="form.email"
+              placeholder="邮箱"
               prefix-icon="Message"
               autocomplete="email"
             />
           </el-form-item>
-          
+
           <el-form-item prop="password">
-            <el-input 
-              v-model="form.password" 
-              type="password" 
-              placeholder="密码" 
+            <el-input
+              v-model="form.password"
+              type="password"
+              placeholder="密码"
               prefix-icon="Lock"
               autocomplete="current-password"
               show-password
             />
           </el-form-item>
-          
+
           <el-form-item>
             <el-button type="primary" native-type="submit" :loading="loading" class="submit-btn">
               登录
             </el-button>
           </el-form-item>
-          
+
           <div class="form-footer">
             <span>还没有账号？</span>
             <router-link to="/register">立即注册</router-link>
@@ -52,7 +52,7 @@
       <div class="theme-switch-container">
         <ThemeSwitcher />
       </div>
-      
+
       <!-- 返回首页 -->
       <div class="back-home">
         <el-button plain size="small" @click="goBackToHome">
@@ -64,7 +64,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
@@ -107,14 +107,14 @@ const isDarkTheme = computed(() => themeStore.isDarkTheme);
 // 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return;
-  
+
   try {
     loading.value = true;
     await formRef.value.validate();
-    
+
     const { email, password } = form;
     const success = await userStore.loginAction({ email, password });
-    
+
     if (success) {
       ElMessage.success('登录成功');
       router.push('/');
@@ -185,7 +185,7 @@ onMounted(() => {
 .dark-theme .login-form {
   background-color: rgba(0, 0, 0, 0.7);
   border: 1px solid rgba(74, 220, 74, 0.6);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15),
               0 0 10px rgba(74, 220, 74, 0.3),
               0 0 30px rgba(74, 220, 74, 0.2);
 }
@@ -193,7 +193,7 @@ onMounted(() => {
 .light-theme .login-form {
   background-color: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(10, 132, 255, 0.6);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1),
               0 0 10px rgba(10, 132, 255, 0.2),
               0 0 30px rgba(10, 132, 255, 0.1);
 }
@@ -211,13 +211,13 @@ onMounted(() => {
 }
 
 .dark-theme .login-form::before {
-  background-image: 
+  background-image:
     repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(74, 220, 74, 0.07) 19px, rgba(74, 220, 74, 0.07) 20px),
     repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(74, 220, 74, 0.07) 19px, rgba(74, 220, 74, 0.07) 20px);
 }
 
 .light-theme .login-form::before {
-  background-image: 
+  background-image:
     repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(10, 132, 255, 0.07) 19px, rgba(10, 132, 255, 0.07) 20px),
     repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(10, 132, 255, 0.07) 19px, rgba(10, 132, 255, 0.07) 20px);
 }
@@ -300,4 +300,4 @@ onMounted(() => {
 .mr-1 {
   margin-right: 5px;
 }
-</style> 
+</style>
