@@ -16,11 +16,15 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:5005',
-        changeOrigin: true
+        changeOrigin: true,
+        timeout: 300000, // 5分钟超时，与前端axios保持一致
+        proxyTimeout: 300000 // 代理超时时间
       },
       '/question': {
         target: 'http://localhost:5005',
-        changeOrigin: true
+        changeOrigin: true,
+        timeout: 300000, // 5分钟超时，与前端axios保持一致  
+        proxyTimeout: 300000 // 代理超时时间
       }
     }
   },

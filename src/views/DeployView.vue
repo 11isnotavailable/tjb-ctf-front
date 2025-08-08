@@ -23,11 +23,16 @@
             <div class="step-number">4</div>
             <div class="step-label">拓扑生成</div>
           </div>
-          <div class="progress-line" :class="{ completed: currentStep > 4 }"></div>
-          <div class="progress-step" :class="{ active: currentStep >= 5 }">
-            <div class="step-number">5</div>
-            <div class="step-label">部署完成</div>
-          </div>
+                      <div class="progress-line" :class="{ completed: currentStep > 4 }"></div>
+            <div class="progress-step" :class="{ active: currentStep >= 5, completed: currentStep > 5 }">
+              <div class="step-number">5</div>
+              <div class="step-label">Docker配置</div>
+            </div>
+            <div class="progress-line" :class="{ completed: currentStep > 5 }"></div>
+            <div class="progress-step" :class="{ active: currentStep >= 6 }">
+              <div class="step-number">6</div>
+              <div class="step-label">部署完成</div>
+            </div>
         </div>
       </div>
     </div>
@@ -644,11 +649,178 @@
             ← 上一步
           </button>
           <button 
-            class="nav-btn submit-btn" 
-            @click="finalSubmit"
+            v-if="generationState === 'completed'"
+            class="nav-btn next-btn" 
+            @click="nextStep"
           >
-            完成 🎉
+            下一步 →
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 第五步：生成Docker Compose -->
+    <div v-if="currentStep === 5" class="step-content">
+      <div class="form-card">
+        <div class="form-header">
+          <h3>🐳 生成Docker Compose</h3>
+          <p>根据网络拓扑配置生成Docker Compose部署文件</p>
+        </div>
+        
+        <div class="docker-generation">
+          <!-- 生成状态区域 -->
+          <div class="generation-area">
+            
+            <!-- 第一阶段：准备生成 -->
+            <div v-if="dockerGenerationState === 'idle'" class="generation-idle">
+              <div class="ready-icon">🚀</div>
+              <h4>准备生成Docker Compose文件</h4>
+              <p>将基于您的网络拓扑配置生成完整的Docker Compose部署文件</p>
+              <div class="generation-info">
+                <div class="info-item">
+                  <span class="info-label">部署ID:</span>
+                  <span class="info-value">{{ deployId || '未设置' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">网络分区:</span>
+                  <span class="info-value">
+                    <span v-for="(config, zone) in networkConfig" :key="zone" v-if="config && config.subnet && config.devices.length > 0" class="zone-tag">
+                      {{ getZoneName(zone) }}
+                      <span class="node-count">({{ config.devices.length }}个设备)</span>
+                    </span>
+                  </span>
+                </div>
+              </div>
+              <button class="generate-docker-btn" @click="startDockerGeneration" :disabled="!deployId">
+                🐳 生成Docker Compose
+              </button>
+            </div>
+
+            <!-- 第二阶段：文件生成中 -->
+            <div v-if="dockerGenerationState === 'generating'" class="generation-processing">
+              <div class="processing-animation">
+                <div class="pulse-circle"></div>
+              </div>
+              <h4>🔄 正在生成Docker Compose</h4>
+              <p>正在解析网络配置并生成部署文件...</p>
+              <div class="dots-loading">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </div>
+            </div>
+
+            <!-- 生成完成状态 -->
+            <div v-if="dockerGenerationState === 'completed'" class="generation-completed">
+              <div class="docker-result">
+                <h4>✅ Docker Compose文件生成完成！</h4>
+                <div class="file-content-container">
+                  <div class="file-header">
+                    <div class="file-name">
+                      <span class="file-icon">📄</span>
+                      docker-compose.yml
+                    </div>
+                    <div class="file-actions">
+                      <button class="copy-btn" @click="copyDockerContent">
+                        📋 复制内容
+                      </button>
+                      <button class="download-btn" @click="downloadDockerFile">
+                        📥 下载文件
+                      </button>
+                    </div>
+                  </div>
+                  <div class="file-content">
+                    <pre><code class="yaml">{{ dockerComposeContent }}</code></pre>
+                  </div>
+                </div>
+                <div class="result-actions">
+                  <button class="action-btn regenerate-btn" @click="regenerateDocker">
+                    🔄 重新生成
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 生成失败状态 -->
+            <div v-if="dockerGenerationState === 'failed'" class="generation-failed">
+              <div class="error-icon">❌</div>
+              <h4>生成失败</h4>
+              <p class="error-message">{{ dockerGenerationError }}</p>
+              <button class="retry-btn" @click="startDockerGeneration">
+                🔄 重试生成
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 导航按钮 -->
+        <div class="card-footer">
+          <button 
+            class="nav-btn prev-btn" 
+            @click="prevStep"
+          >
+            ← 上一步
+          </button>
+          <button 
+            v-if="dockerGenerationState === 'completed'"
+            class="nav-btn next-btn" 
+            @click="nextStep"
+          >
+            下一步 →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 第六步：部署完成 -->
+    <div v-if="currentStep === 6" class="step-content">
+      <div class="form-card">
+        <div class="form-header">
+          <h3>🎉 部署完成</h3>
+          <p>您的CTF题目已成功部署</p>
+        </div>
+        
+        <div class="completion-summary">
+          <div class="summary-section">
+            <h4>📋 部署摘要</h4>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-label">题目名称:</span>
+                <span class="summary-value">{{ formData.title }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">难度等级:</span>
+                <span class="summary-value">{{ getDifficultyText(formData.difficulty) }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">部署ID:</span>
+                <span class="summary-value">{{ deployId || '未设置' }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">网络分区数:</span>
+                <span class="summary-value">{{ Object.keys(networkConfig).filter(zone => networkConfig[zone] && networkConfig[zone].subnet && networkConfig[zone].devices.length > 0).length }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">设备总数:</span>
+                <span class="summary-value">{{ Object.values(networkConfig).reduce((total, config) => total + (config && config.devices ? config.devices.length : 0), 0) }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="success-message">
+            <div class="success-icon">✅</div>
+            <h4>部署成功完成！</h4>
+            <p>您的CTF题目已成功生成并准备就绪。</p>
+          </div>
+          
+          <div class="action-buttons">
+            <button class="action-btn primary-btn" @click="viewDeployment">
+              👁️ 查看部署详情
+            </button>
+            <button class="action-btn secondary-btn" @click="createNew">
+              🆕 创建新题目
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -693,6 +865,7 @@ import {
   generateTopology,
   generateTopologyImage,
   generateDockerCompose,
+  getTopologyImageUrl,
   type InputScenarioRequest,
   type InputDevicesRequest,
   type GenerateTopologyRequest,
@@ -1290,6 +1463,8 @@ const logDevicesData = () => {
   ElMessage.success(`设备数据已打印到控制台，共 ${devices.length} 个区域`)
 }
 
+
+
 // 获取所有已配置的节点（包括嵌套的子节点）
 const getAllConfiguredNodes = () => {
   const findConfiguredNodes = (nodes) => {
@@ -1317,6 +1492,11 @@ const currentSubnetConfig = ref(null)
 
 // 节点ID计数器
 const nodeIdCounter = ref(1)
+
+// 第五步：Docker Compose生成状态
+const dockerGenerationState = ref('idle') // 'idle', 'generating', 'completed', 'failed'
+const dockerComposeContent = ref('')
+const dockerGenerationError = ref('')
 
 // 计算属性
 const canProceed = computed(() => {
@@ -1351,7 +1531,7 @@ const canSubmit = computed(() => {
 
 // 方法
 const nextStep = async () => {
-  if (!canProceed.value || currentStep.value > 5) {
+  if (!canProceed.value || currentStep.value > 6) {
     return
   }
 
@@ -1364,8 +1544,8 @@ const nextStep = async () => {
       // 第二步完成时，提交scenario数据
       await submitScenarioStep()
     } else if (currentStep.value === 3) {
-      // 第三步完成时，收集设备配置数据并转换为旧格式以保持兼容
-      await collectDeviceConfigStepNew()
+      // 第三步完成时，收集设备配置数据并提交到后端
+      await collectDeviceConfigStep()
     } else if (currentStep.value === 4) {
       // 第四步完成时，直接进入第五步
       // 无需额外处理，直接跳转
@@ -1430,71 +1610,56 @@ const submitScenarioStep = async () => {
   }
 }
 
-// 第三步：收集设备配置数据（不发送，只存储）
+// 第三步：收集设备配置数据并提交到后端
 const collectDeviceConfigStep = async () => {
   if (!deployId.value) {
     throw new Error('缺少部署ID')
   }
 
-  // 收集当前拓扑中的所有配置数据
+  // 收集当前网络配置中的所有设备数据
   const devices = []
   
   // 定义网络分区映射
   const zoneMapping = {
-    'internal': { name: '内网', defaultSubnet: '192.168.1.0/24' },
-    'dmz': { name: 'DMZ', defaultSubnet: '10.0.0.0/24' },
-    'attack': { name: '攻击区', defaultSubnet: '172.16.0.0/24' }
+    'internal': '内网',
+    'dmz': 'DMZ', 
+    'attack': '攻击区'
   }
   
   // 遍历所有网络分区
-  for (const [zoneKey, nodes] of Object.entries(topology.value)) {
-    const targetMachines = []
-    let subnet = zoneMapping[zoneKey]?.defaultSubnet || '192.168.1.0/24'
-    
-    // 递归收集所有已配置的节点
-    const collectConfiguredNodes = (nodeList) => {
-      for (const node of nodeList) {
-        if (node.configured && node.type === 'configured') {
-          // 如果节点有子网信息，使用它
-          if (node.subnet) {
-            subnet = node.subnet
-          }
-          
-          targetMachines.push({
-            machine_type: node.nodeType || node.type,
-            system: node.system || 'Unknown',
-            ip_address: node.ip || `${subnet.split('/')[0].split('.').slice(0, 3).join('.')}.${10 + targetMachines.length}`,
-            image: node.image || 'default:latest'
-          })
-        }
-        
-        // 递归处理子节点
-        if (node.children && node.children.length > 0) {
-          collectConfiguredNodes(node.children)
-        }
-      }
-    }
-    
-    collectConfiguredNodes(nodes)
-    
-    // 如果该分区有配置的机器，则添加到devices中
-    if (targetMachines.length > 0) {
+  for (const [zoneKey, zoneConfig] of Object.entries(networkConfig.value)) {
+    if (zoneConfig.devices && zoneConfig.devices.length > 0) {
+      const targetMachines = zoneConfig.devices.map(device => ({
+        machine_type: device.type || '未配置',
+        system: device.system || '未选择系统',
+        ip_address: device.ip || '',
+        image: device.image || 'ubuntu:latest' // 默认镜像
+      }))
+
       devices.push({
-        zone: zoneMapping[zoneKey]?.name || zoneKey,
-        subnet: subnet,
+        zone: zoneMapping[zoneKey] || zoneKey,
+        subnet: zoneConfig.subnet || '192.168.1.0/24',
         target_machines: targetMachines
       })
     }
   }
-  
-  // 构建完整的设备配置数据
-  deviceConfigData.value = {
+
+  // 提交设备配置到后端
+  const deviceData = {
     deploy_id: deployId.value,
     devices: devices
   }
+
+  console.log('提交设备配置:', deviceData)
+  const response = await inputDevices(deviceData)
   
-  console.log('设备配置数据已收集:', deviceConfigData.value)
-  ElMessage.success('设备配置已保存，准备进入最终步骤')
+  if (response.code === 200) {
+    ElMessage.success('设备配置提交成功')
+    console.log('Device config submitted for deploy_id:', deployId.value)
+  } else {
+    console.error('设备配置API响应不符合预期:', response)
+    throw new Error(response.message || '设备配置提交失败')
+  }
 }
 
 const prevStep = () => {
@@ -1856,45 +2021,69 @@ const generateTopologySequence = async () => {
   
   console.log('开始生成拓扑序列，Deploy ID:', deployId.value)
   console.log('发送的数据:', topologyData)
+  console.log('注意：此步骤可能需要1-2分钟，AI正在分析需求并生成拓扑...')
   
   try {
+    // 增加超时时间，因为这一步可能需要1-2分钟
     const response = await generateTopology(topologyData)
     console.log('拓扑序列生成响应:', response)
     
     if (!response || response.code !== 200) {
       console.error('拓扑序列生成失败，响应码:', response?.code)
       console.error('错误消息:', response?.message)
+      console.error('完整响应数据:', response)
       throw new Error(response?.message || '生成拓扑序列失败')
     }
     
     console.log('拓扑序列生成成功')
   } catch (error: any) {
     console.error('调用生成拓扑序列API时发生错误:', error)
+    console.error('Deploy ID:', deployId.value)
+    console.error('错误类型:', error.name)
+    console.error('错误码:', error.code)
+    console.error('完整错误对象:', error)
     
-    // 如果是网络错误或HTTP错误，提供更详细的信息
-    if (error.response) {
+    // 重要：区分HTTP错误和业务逻辑错误
+    if (error.businessError) {
+      // 这是业务逻辑错误（后端返回HTTP 200但code不是200）
+      console.error('业务逻辑错误:', error.message)
+      console.error('响应状态码:', error.response?.status)
+      console.error('业务错误码:', error.response?.data?.code)
+      console.error('业务错误信息:', error.response?.data?.message)
+      
+      throw new Error(`生成拓扑序列失败: ${error.message}`)
+    } else if (error.response) {
+      // 这是真正的HTTP错误（404, 500, 504等）
       const status = error.response.status
       const data = error.response.data
       console.error('HTTP错误状态:', status)
-      console.error('错误响应数据:', data)
+      console.error('错误响应数据:', JSON.stringify(data, null, 2))
+      console.error('响应头:', error.response.headers)
       
       if (status === 404) {
-        throw new Error(`部署记录不存在 (ID: ${deployId.value})，请确认数据是否正确保存`)
+        throw new Error(`部署记录不存在 (ID: ${deployId.value})，请确认前面的步骤是否成功保存数据`)
       } else if (status === 500) {
-        throw new Error(`服务器内部错误: ${data?.detail || '未知错误'}`)
+        const detail = data?.detail || data?.message || '服务器处理异常'
+        throw new Error(`服务器内部错误 (500): ${detail}。这通常是后端处理时出现异常，请检查后端日志或稍后重试。`)
+      } else if (status === 504) {
+        throw new Error(`请求超时 (504): 服务器处理时间过长，这可能是因为AI分析需要更多时间。请稍后重试。`)
       } else {
         throw new Error(`HTTP ${status}: ${data?.detail || data?.message || error.message}`)
       }
     } else if (error.request) {
-      throw new Error('网络连接失败，请检查网络状态')
+      // 网络连接错误
+      console.error('请求详情:', error.request)
+      throw new Error('网络连接失败，请检查网络状态和后端服务是否正常运行')
     } else {
+      // 其他未知错误
+      console.error('未知错误:', error.message)
       throw error
     }
   }
 }
 
 // 生成拓扑图像
-const generateTopologyImageFile = async (): Promise<TopologyImageResponse> => {
+const generateTopologyImageFile = async () => {
   if (!deployId.value) {
     throw new Error('部署ID不存在')
   }
@@ -1907,36 +2096,57 @@ const generateTopologyImageFile = async (): Promise<TopologyImageResponse> => {
   const response = await generateTopologyImage(imageData)
   console.log('拓扑图像生成响应:', response)
   
-  if (!response || response.code !== 200 || !response.data) {
+  if (!response || response.code !== 200) {
     console.error('拓扑图像生成失败，响应:', response)
     throw new Error(response?.message || '生成拓扑图像失败')
   }
   
-  console.log('拓扑图像生成成功，URL:', response.data.topology_url)
-  return response.data
+  // 获取拓扑图像URL
+  const imageUrl = getTopologyImageUrl(deployId.value)
+  console.log('拓扑图像URL:', imageUrl)
+  
+  return {
+    topology_url: imageUrl
+  }
 }
 
 // 将拓扑数据转换为API所需的设备格式
 const convertTopologyToDevices = (): DeviceZone[] => {
   const devices: DeviceZone[] = []
   
-  // 处理内网区域
-  if (topology.value.internal.length > 0) {
-    const internalDevices = convertZoneToDevices(topology.value.internal, 'internal', '192.168.2.0/24')
-    if (internalDevices) devices.push(internalDevices)
-  }
-  
-  // 处理DMZ区域
-  if (topology.value.dmz.length > 0) {
-    const dmzDevices = convertZoneToDevices(topology.value.dmz, 'dmz', '192.168.1.0/24')
-    if (dmzDevices) devices.push(dmzDevices)
-  }
-  
-  // 处理攻击区域
-  if (topology.value.attack.length > 0) {
-    const attackDevices = convertZoneToDevices(topology.value.attack, 'attack', '192.168.100.0/24')
-    if (attackDevices) devices.push(attackDevices)
-  }
+  // 直接从 networkConfig 转换数据
+  Object.keys(networkConfig.value).forEach(zone => {
+    const config = networkConfig.value[zone]
+    
+    if (config.subnet.trim() && config.devices.length > 0) {
+      const targetMachines: TargetMachine[] = []
+      
+      // 转换每个设备
+      config.devices.forEach(device => {
+        const machine: TargetMachine = {
+          machine_type: device.type || 'Web服务器',
+          system: device.system || 'apache+php', 
+          ip_address: device.ip || '自动分配',
+          image: device.image || 'apache:php'
+        }
+        targetMachines.push(machine)
+      })
+      
+      const zoneNames = {
+        'internal': '内网区',
+        'dmz': 'DMZ区',
+        'attack': '攻击区'
+      }
+      
+      const deviceZone: DeviceZone = {
+        zone: zoneNames[zone as keyof typeof zoneNames] || zone,
+        subnet: config.subnet,
+        target_machines: targetMachines
+      }
+      
+      devices.push(deviceZone)
+    }
+  })
   
   return devices
 }
@@ -2050,6 +2260,234 @@ const checkDeployStatus = () => {
 const finalSubmit = () => {
   console.log('最终提交...')
   ElMessage.success('CTF题目创建完成！')
+}
+
+// Docker Compose相关方法
+const startDockerGeneration = async () => {
+  try {
+    // 重置状态
+    dockerGenerationState.value = 'generating'
+    dockerGenerationError.value = ''
+    
+    ElMessage.info('开始生成Docker Compose文件，请稍候...')
+    
+    if (!deployId.value) {
+      throw new Error('部署ID不存在')
+    }
+    
+    const requestData: GenerateTopologyRequest = {
+      deploy_id: deployId.value
+    }
+    
+    console.log('开始生成Docker Compose，Deploy ID:', deployId.value)
+    const response = await generateDockerCompose(requestData)
+    console.log('Docker Compose生成响应:', response)
+    
+    if (!response || response.code !== 200) {
+      throw new Error(response?.message || '生成Docker Compose文件失败')
+    }
+    
+    // 模拟获取Docker Compose内容（实际应该从API获取）
+    dockerComposeContent.value = generateSampleDockerCompose()
+    dockerGenerationState.value = 'completed'
+    ElMessage.success('Docker Compose文件生成完成！')
+    
+  } catch (error: any) {
+    console.error('Docker Compose生成失败:', error)
+    dockerGenerationState.value = 'failed'
+    dockerGenerationError.value = error.message || '生成Docker Compose文件时发生未知错误'
+    ElMessage.error('Docker Compose生成失败: ' + dockerGenerationError.value)
+  }
+}
+
+const generateSampleDockerCompose = () => {
+  // 根据网络配置生成示例Docker Compose内容
+  const services = {}
+  let portCounter = 8080
+  
+  Object.keys(networkConfig.value).forEach(zone => {
+    const config = networkConfig.value[zone]
+    if (config.devices && config.devices.length > 0) {
+      config.devices.forEach((device, index) => {
+        const serviceName = `${zone}_${device.type.replace(/\s+/g, '_').toLowerCase()}_${index + 1}`
+        services[serviceName] = {
+          image: device.image,
+          container_name: serviceName,
+          ports: [`${portCounter++}:80`],
+          environment: {
+            MACHINE_TYPE: device.type,
+            SYSTEM: device.system,
+            IP_ADDRESS: device.ip
+          },
+          networks: {
+            [zone]: {
+              ipv4_address: device.ip
+            }
+          }
+        }
+      })
+    }
+  })
+  
+  const networks = {}
+  Object.keys(networkConfig.value).forEach(zone => {
+    const config = networkConfig.value[zone]
+    if (config.subnet) {
+      networks[zone] = {
+        driver: 'bridge',
+        ipam: {
+          config: [{
+            subnet: config.subnet
+          }]
+        }
+      }
+    }
+  })
+  
+  return `version: '3.8'
+
+services:
+${Object.entries(services).map(([name, config]) => `  ${name}:
+    image: ${config.image}
+    container_name: ${config.container_name}
+    ports:
+      - "${config.ports[0]}"
+    environment:
+      - MACHINE_TYPE=${config.environment.MACHINE_TYPE}
+      - SYSTEM=${config.environment.SYSTEM}
+      - IP_ADDRESS=${config.environment.IP_ADDRESS}
+    networks:
+      ${Object.keys(config.networks)[0]}:
+        ipv4_address: ${config.environment.IP_ADDRESS}`).join('\n\n')}
+
+networks:
+${Object.entries(networks).map(([name, config]) => `  ${name}:
+    driver: ${config.driver}
+    ipam:
+      config:
+        - subnet: ${config.ipam.config[0].subnet}`).join('\n\n')}`
+}
+
+const copyDockerContent = () => {
+  if (!dockerComposeContent.value) {
+    ElMessage.error('没有可复制的内容')
+    return
+  }
+  
+  try {
+    navigator.clipboard.writeText(dockerComposeContent.value).then(() => {
+      ElMessage.success('Docker Compose内容已复制到剪贴板')
+    }).catch(() => {
+      // 降级方案
+      const textArea = document.createElement('textarea')
+      textArea.value = dockerComposeContent.value
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      ElMessage.success('Docker Compose内容已复制到剪贴板')
+    })
+  } catch (error) {
+    console.error('复制失败:', error)
+    ElMessage.error('复制失败，请手动复制')
+  }
+}
+
+const downloadDockerFile = () => {
+  if (!dockerComposeContent.value) {
+    ElMessage.error('没有可下载的内容')
+    return
+  }
+  
+  try {
+    const blob = new Blob([dockerComposeContent.value], { type: 'text/yaml' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `docker-compose-${deployId.value || 'generated'}.yml`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    
+    ElMessage.success('Docker Compose文件下载已开始')
+  } catch (error) {
+    console.error('下载失败:', error)
+    ElMessage.error('下载Docker Compose文件失败')
+  }
+}
+
+const regenerateDocker = () => {
+  // 重置状态并重新开始生成
+  dockerGenerationState.value = 'idle'
+  dockerComposeContent.value = ''
+  dockerGenerationError.value = ''
+  ElMessage.info('准备重新生成Docker Compose文件')
+}
+
+// 第六步相关方法
+const viewDeployment = () => {
+  // 查看部署详情的逻辑
+  console.log('查看部署详情')
+  ElMessage.info('部署详情功能将在后续版本中实现')
+  
+  // 这里可以跳转到部署详情页面或打开详情弹窗
+  // 例如：router.push(`/deployments/${deployId.value}`)
+}
+
+const createNew = () => {
+  // 创建新题目的逻辑
+  console.log('创建新题目')
+  
+  // 重置所有表单数据
+  formData.value = {
+    title: '',
+    description: '',
+    enabled: true,
+    flag: '',
+    tagId: '',
+    validTime: 3600,
+    difficulty: 3,
+    maxAttempts: 20,
+    requirements: ''
+  }
+  
+  // 重置网络配置
+  networkConfig.value = {
+    internal: {
+      subnet: '',
+      devices: []
+    },
+    dmz: {
+      subnet: '',
+      devices: []
+    },
+    attack: {
+      subnet: '',
+      devices: []
+    }
+  }
+  
+  // 重置拓扑数据
+  topology.value = {
+    internal: [],
+    dmz: [],
+    attack: []
+  }
+  
+  // 重置所有状态
+  currentStep.value = 1
+  questionId.value = null
+  deployId.value = null
+  generationState.value = 'idle'
+  dockerGenerationState.value = 'idle'
+  generatedTopologyImage.value = ''
+  dockerComposeContent.value = ''
+  generationError.value = ''
+  dockerGenerationError.value = ''
+  processingProgress.value = 0
+  
+  ElMessage.success('已重置所有数据，可以开始创建新题目')
 }
 
 // 拓扑相关方法
@@ -3953,5 +4391,297 @@ const findNodeById = (nodes, targetId) => {
 .config-dialog .form-group {
   display: flex;
   flex-direction: column;
+}
+
+/* 第五步：Docker Compose生成样式 */
+.docker-generation {
+  padding: 20px 0;
+}
+
+.generation-info {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 20px 0;
+  border: 1px solid #e2e8f0;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #475569;
+  min-width: 80px;
+}
+
+.info-value {
+  color: #1e293b;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.generate-docker-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  margin-top: 20px;
+}
+
+.generate-docker-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.generate-docker-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.ready-icon {
+  font-size: 4rem;
+  margin-bottom: 10px;
+}
+
+/* Docker Compose文件内容样式 */
+.docker-result {
+  width: 100%;
+}
+
+.docker-result h4 {
+  color: #059669;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 30px 0;
+}
+
+.file-content-container {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 20px 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.file-header {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.file-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.file-icon {
+  font-size: 1.2rem;
+}
+
+.file-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.copy-btn, .download-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copy-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.copy-btn:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.download-btn {
+  background: #10b981;
+  color: white;
+}
+
+.download-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.file-content {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.file-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.file-content code {
+  color: #e2e8f0;
+}
+
+.file-content code.yaml {
+  color: #e2e8f0;
+}
+
+/* 第六步：部署完成样式 */
+.completion-summary {
+  padding: 20px 0;
+}
+
+.summary-section {
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  border: 1px solid #e2e8f0;
+}
+
+.summary-section h4 {
+  margin: 0 0 16px 0;
+  color: #334155;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.success-message {
+  text-align: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-radius: 16px;
+  margin: 30px 0;
+  border: 2px solid #a7f3d0;
+}
+
+.success-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.success-message h4 {
+  color: #059669;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+}
+
+.success-message p {
+  color: #047857;
+  font-size: 1rem;
+  margin: 0;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+}
+
+.primary-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.secondary-btn {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+}
+
+.secondary-btn:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .file-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .file-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .action-btn {
+    width: 100%;
+    max-width: 300px;
+    justify-content: center;
+  }
 }
 </style>

@@ -44,21 +44,40 @@ class Request {
       (response): any => {
         const res: ApiResponse = response.data;
         
+        console.log('API响应详情:', {
+          url: response.config?.url,
+          status: response.status,
+          data: res
+        });
+        
         // 请求成功
         if (res.code === 200) {
           return res;
         }
         
-        // 错误消息提示
-        console.error('响应错误:', res);
-        ElMessage.error(res.message || '请求失败');
+        // 业务层面的错误处理
+        console.error('业务逻辑错误:', res);
+        console.error('错误码:', res.code);
+        console.error('错误消息:', res.message);
+        
+        // 不要弹出错误提示，让业务层面决定如何处理
+        // ElMessage.error(res.message || '请求失败');
         
         // 特定错误处理
         if (res.code === 401) {
+          ElMessage.error('登录已过期，请重新登录');
           router.push('/login');
         }
         
-        return Promise.reject(new Error(res.message || '请求失败'));
+        // 创建一个包含完整响应信息的错误对象
+        const error = new Error(res.message || '请求失败');
+        (error as any).response = {
+          status: response.status,
+          data: res
+        };
+        (error as any).businessError = true; // 标记这是业务逻辑错误，不是HTTP错误
+        
+        return Promise.reject(error);
       },
       (error) => {
         console.error('请求错误详情:', error);
@@ -134,7 +153,7 @@ class Request {
 
 export default new Request({
   baseURL: API_BASE_URL,
-  timeout: 300000, // 5分钟超时，适应后端长时间处理
+  timeout: 3000000, // 5分钟超时，适应后端长时间处理
   headers: {
     'Content-Type': 'application/json'
   }

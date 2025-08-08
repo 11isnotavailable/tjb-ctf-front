@@ -15,3 +15,6 @@ export interface Tag {
 export function getAllTags() {
   return request.get<ApiResponse<Tag[]>>('/tag/list');
 }
+
+
+

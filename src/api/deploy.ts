@@ -99,3 +99,8 @@ export interface DeployToQuestionRequest {
 export function deployToQuestion(data: DeployToQuestionRequest) {
   return request.post<ApiResponse<null>>('/deploy/question', data);
 }
+
+// 获取拓扑图像URL
+export function getTopologyImageUrl(deployId: number): string {
+  return `${import.meta.env.VITE_API_BASE_URL}/deploy/topology_image/${deployId}`;
+}
