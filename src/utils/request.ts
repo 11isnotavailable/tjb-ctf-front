@@ -42,6 +42,19 @@ class Request {
     // 响应拦截器
     this.instance.interceptors.response.use(
       (response): any => {
+        // 检查是否是文件下载请求（响应类型为blob）
+        if (response.config.responseType === 'blob') {
+          console.log('文件下载响应:', {
+            url: response.config?.url,
+            status: response.status,
+            contentType: response.headers['content-type'],
+            dataSize: response.data?.size || 'unknown'
+          });
+          
+          // 对于文件下载，直接返回原始响应
+          return response;
+        }
+        
         const res: ApiResponse = response.data;
         
         console.log('API响应详情:', {

@@ -192,7 +192,7 @@
                       <Document />
                     </el-icon>
                   </template>
-                  <el-button type="primary" @click="$router.push('/questions')">开始刷题</el-button>
+                  <el-button type="primary" @click="$router.push('/home/questions')">开始刷题</el-button>
                 </el-empty>
               </div>
               
@@ -833,10 +833,15 @@ const handleDownloadReport = async () => {
     
     const response = await getEvaluationReport();
     
-    // 创建下载链接
-    const blob = new Blob([response.data], { 
-      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-    });
+    // 由于响应拦截器的修改，现在response是原始的axios响应对象
+    // response.data是Blob对象
+    const blob = response.data;
+    
+    // 检查是否确实是一个有效的blob
+    if (!(blob instanceof Blob)) {
+      throw new Error('响应数据不是有效的文件格式');
+    }
+    
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -854,7 +859,18 @@ const handleDownloadReport = async () => {
     ElMessage.success('分析报告下载成功');
   } catch (error: any) {
     console.error('下载分析报告失败:', error);
-    ElMessage.error(error.response?.data?.message || '下载分析报告失败');
+    
+    // 更详细的错误处理
+    let errorMessage = '下载分析报告失败';
+    if (error.response?.status === 404) {
+      errorMessage = '报告生成失败，请稍后重试';
+    } else if (error.response?.status >= 500) {
+      errorMessage = '服务器错误，请稍后重试';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    ElMessage.error(errorMessage);
   } finally {
     isDownloading.value = false;
   }
