@@ -275,7 +275,7 @@ const userInfo = computed(() => userStore.userInfo);
 const userAvatar = ref('');
 
 // 活动标签页
-const activeTab = ref('settings');
+const activeTab = ref('records');
 
 // 下载分析报告状态
 const isDownloading = ref(false);
@@ -377,7 +377,7 @@ const initCharts = () => {
         legend: {
           orient: 'vertical',
           left: 'left',
-          data: ['Web', 'Pwn', 'Crypto', 'Reverse', 'Misc']
+          data: ['Web安全', '密码学', '取证分析', '系统安全', '恶意软件']
         },
         series: [
           {
@@ -505,7 +505,14 @@ const updateCharts = () => {
 // 获取分类数据
 const getCategoryData = () => {
   if (!fullStatsData.value?.tag_stats) {
-    return [];
+    // 如果没有数据，返回默认的空数据结构
+    return [
+      { name: 'Web安全', value: 0 },
+      { name: '密码学', value: 0 },
+      { name: '取证分析', value: 0 },
+      { name: '系统安全', value: 0 },
+      { name: '恶意软件', value: 0 }
+    ];
   }
   
   const tagStats = fullStatsData.value.tag_stats;
@@ -517,12 +524,11 @@ const getCategoryData = () => {
     'malware': '恶意软件'
   };
   
-  return Object.keys(tagStats)
-    .filter(key => tagStats[key].total > 0)
-    .map(key => ({
-      name: categoryMapping[key] || key,
-      value: tagStats[key].solved
-    }));
+  // 显示所有分类，即使解题数为0
+  return Object.keys(tagStats).map(key => ({
+    name: categoryMapping[key] || key,
+    value: tagStats[key].solved || 0
+  }));
 };
 
 // 获取最近7天日期
@@ -600,15 +606,15 @@ const fetchUserStats = async () => {
     const response = await getUserStats(userInfo.value.user_id);
     if (response.data.code === 200) {
       const statsData = response.data.data;
-      userStats.totalSolved = statsData.total_solved || 0;
-      userStats.totalSuccessSolved = statsData.total_attempts || 0; // 使用 total_attempts
+      userStats.totalSolved = statsData.total_attempts || 0; // 总解题次数
+      userStats.totalSuccessSolved = statsData.total_solved || 0; // 正确解题数
       userStats.totalScore = statsData.total_score || 0;
       
       // 存储完整的统计数据供图表使用
       fullStatsData.value = statsData;
       
-      // 如果当前在records标签页且已有记录数据，初始化图表
-      if (activeTab.value === 'records' && records.value.length > 0) {
+      // 如果当前在records标签页，初始化图表（即使没有记录数据也显示空图表）
+      if (activeTab.value === 'records') {
         initCharts();
       }
     } else {
@@ -636,7 +642,7 @@ const fetchRecords = async () => {
       records.value = recordsData.items || []; // 使用 items 而不是 records
       total.value = recordsData.total || 0;
 
-      // 数据加载完成后初始化图表
+      // 数据加载完成后初始化图表（即使没有记录数据也显示空图表）
       if (activeTab.value === 'records' && fullStatsData.value) {
         initCharts();
       }
@@ -751,8 +757,11 @@ const handleDownloadReport = async () => {
 
 // 监听标签页切换
 watch(() => activeTab.value, (newVal) => {
-  if (newVal === 'records' && records.value.length > 0) {
-    initCharts();
+  if (newVal === 'records') {
+    // 延时确保DOM渲染完成
+    setTimeout(() => {
+      initCharts();
+    }, 100);
   }
 });
 
