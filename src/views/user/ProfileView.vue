@@ -41,13 +41,15 @@
               type="success" 
               size="large"
               :loading="isDownloading"
+              :disabled="!hasAnyRecords"
               @click="handleDownloadReport"
               class="report-btn"
             >
               <el-icon><Document /></el-icon>
               获取分析报告
             </el-button>
-            <p class="report-tip">下载详细的个人能力分析报告</p>
+            <p class="report-tip" v-if="hasAnyRecords">下载详细的个人能力分析报告</p>
+            <p class="report-tip warning" v-else>请先完成题目再尝试生成报告</p>
           </div>
         </el-card>
       </el-col>
@@ -321,6 +323,12 @@ const hasTrendData = computed(() => {
 const hasSkillData = computed(() => {
   const data = getSkillRadarData();
   return data.some(value => value > 0);
+});
+
+// 检查用户是否有任何做题记录
+const hasAnyRecords = computed(() => {
+  // 检查总解题数是否大于0，或者records数组中是否有数据
+  return userStats.totalSolved > 0 || records.value.length > 0;
 });
 
 // 个人资料表单
@@ -993,6 +1001,11 @@ onBeforeUnmount(() => {
   font-size: 0.85rem;
   color: #6b7280;
   line-height: 1.4;
+}
+
+.report-tip.warning {
+  color: #f56565;
+  font-weight: 500;
 }
 
 .card-header {
