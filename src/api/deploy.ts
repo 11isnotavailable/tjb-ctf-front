@@ -104,3 +104,13 @@ export function deployToQuestion(data: DeployToQuestionRequest) {
 export function getTopologyImageUrl(deployId: number): string {
   return `${import.meta.env.VITE_API_BASE_URL}/deploy/topology_image/${deployId}`;
 }
+
+// compose文件响应数据
+export interface ComposeFileResponse {
+  compose_file: string;
+}
+
+// 获取compose文件内容
+export function getComposeFile(deployId: number) {
+  return request.get<ApiResponse<ComposeFileResponse>>(`/deploy/compose-file/${deployId}`);
+}

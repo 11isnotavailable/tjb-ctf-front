@@ -865,11 +865,13 @@ import {
   generateTopology,
   generateTopologyImage,
   generateDockerCompose,
+  getComposeFile,
   getTopologyImageUrl,
   type InputScenarioRequest,
   type InputDevicesRequest,
   type GenerateTopologyRequest,
   type TopologyImageResponse,
+  type ComposeFileResponse,
   type DeviceZone,
   type TargetMachine
 } from '@/api/deploy'
@@ -2287,8 +2289,16 @@ const startDockerGeneration = async () => {
       throw new Error(response?.message || '生成Docker Compose文件失败')
     }
 
-    // 模拟获取Docker Compose内容（实际应该从API获取）
-    dockerComposeContent.value = generateSampleDockerCompose()
+    // 生成成功后，立即获取真实的compose文件内容
+    console.log('开始获取compose文件内容，Deploy ID:', deployId.value)
+    const composeResponse = await getComposeFile(deployId.value)
+    console.log('获取compose文件响应:', composeResponse)
+
+    if (!composeResponse || composeResponse.code !== 200 || !composeResponse.data?.compose_file) {
+      throw new Error('获取compose文件内容失败')
+    }
+
+    dockerComposeContent.value = composeResponse.data.compose_file
     dockerGenerationState.value = 'completed'
     ElMessage.success('Docker Compose文件生成完成！')
 
@@ -2300,73 +2310,8 @@ const startDockerGeneration = async () => {
   }
 }
 
-const generateSampleDockerCompose = () => {
-  // 根据网络配置生成示例Docker Compose内容
-  const services = {}
-  let portCounter = 8080
-
-  Object.keys(networkConfig.value).forEach(zone => {
-    const config = networkConfig.value[zone]
-    if (config.devices && config.devices.length > 0) {
-      config.devices.forEach((device, index) => {
-        const serviceName = `${zone}_${device.type.replace(/\s+/g, '_').toLowerCase()}_${index + 1}`
-        services[serviceName] = {
-          image: device.image,
-          container_name: serviceName,
-          ports: [`${portCounter++}:80`],
-          environment: {
-            MACHINE_TYPE: device.type,
-            SYSTEM: device.system,
-            IP_ADDRESS: device.ip
-          },
-          networks: {
-            [zone]: {
-              ipv4_address: device.ip
-            }
-          }
-        }
-      })
-    }
-  })
-
-  const networks = {}
-  Object.keys(networkConfig.value).forEach(zone => {
-    const config = networkConfig.value[zone]
-    if (config.subnet) {
-      networks[zone] = {
-        driver: 'bridge',
-        ipam: {
-          config: [{
-            subnet: config.subnet
-          }]
-        }
-      }
-    }
-  })
-
-  return `version: '3.8'
-
-services:
-${Object.entries(services).map(([name, config]) => `  ${name}:
-    image: ${config.image}
-    container_name: ${config.container_name}
-    ports:
-      - "${config.ports[0]}"
-    environment:
-      - MACHINE_TYPE=${config.environment.MACHINE_TYPE}
-      - SYSTEM=${config.environment.SYSTEM}
-      - IP_ADDRESS=${config.environment.IP_ADDRESS}
-    networks:
-      ${Object.keys(config.networks)[0]}:
-        ipv4_address: ${config.environment.IP_ADDRESS}`).join('\n\n')}
-
-networks:
-${Object.entries(networks).map(([name, config]) => `  ${name}:
-    driver: ${config.driver}
-    ipam:
-      config:
-        - subnet: ${config.ipam.config[0].subnet}`).join('\n\n')}`
-}
+// 硬编码的generateSampleDockerCompose函数已移除
+// 现在直接从后端API获取真实的compose文件内容
 
 const copyDockerContent = () => {
   if (!dockerComposeContent.value) {
