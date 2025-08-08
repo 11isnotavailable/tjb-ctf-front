@@ -236,7 +236,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch, onBeforeUnmount } from 'vue';
+import { ref, reactive, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Document } from '@element-plus/icons-vue';
@@ -251,7 +251,8 @@ import {
   TitleComponent,
   TooltipComponent,
   LegendComponent,
-  GridComponent
+  GridComponent,
+  GraphicComponent
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 
@@ -264,6 +265,7 @@ echarts.use([
   TooltipComponent,
   LegendComponent,
   GridComponent,
+  GraphicComponent,
   CanvasRenderer
 ]);
 
@@ -360,11 +362,13 @@ const initCharts = () => {
   // 如果activeTab不是records，不初始化图表
   if (activeTab.value !== 'records') return;
   
-  // 等待DOM准备好
-  setTimeout(() => {
-    // 分类统计饼图
-    if (!categoryChart && document.getElementById('categoryChart')) {
-      categoryChart = echarts.init(document.getElementById('categoryChart'));
+  // 使用 nextTick 确保DOM完全渲染
+  nextTick(() => {
+    setTimeout(() => {
+      // 分类统计饼图
+      const categoryElement = document.getElementById('categoryChart');
+      if (!categoryChart && categoryElement && categoryElement.offsetWidth > 0 && categoryElement.offsetHeight > 0) {
+        categoryChart = echarts.init(categoryElement);
       const categoryData = getCategoryData();
       const hasData = categoryData.some(item => item.value > 0);
       
@@ -426,103 +430,106 @@ const initCharts = () => {
           }
         ]
       });
-    }
+      }
     
-    // 解题趋势折线图
-    if (!trendChart && document.getElementById('trendChart')) {
-      trendChart = echarts.init(document.getElementById('trendChart'));
-      const trendData = getSolvedTrendData();
-      const hasData = trendData.some(val => val > 0);
-      
-      trendChart.setOption({
-        title: {
-          text: '解题趋势',
-          left: 'center'
-        },
-        graphic: {
-          type: 'text',
-          left: 'center',
-          top: 'middle',
-          style: {
-            text: hasData ? '' : '暂无解题记录',
-            textAlign: 'center',
-            fill: '#999',
-            fontSize: 14
+      // 解题趋势折线图
+      const trendElement = document.getElementById('trendChart');
+      if (!trendChart && trendElement && trendElement.offsetWidth > 0 && trendElement.offsetHeight > 0) {
+        trendChart = echarts.init(trendElement);
+        const trendData = getSolvedTrendData();
+        const hasData = trendData.some(val => val > 0);
+        
+        trendChart.setOption({
+          title: {
+            text: '解题趋势',
+            left: 'center'
           },
-          invisible: hasData
-        },
-        tooltip: {
-          trigger: 'axis'
-        },
-        xAxis: {
-          type: 'category',
-          data: getLast7Days()
-        },
-        yAxis: {
-          type: 'value'
-        },
-        series: [
-          {
-            data: trendData,
-            type: 'line',
-            smooth: true,
-            name: '解题数',
-            color: '#67C23A'
-          }
-        ]
-      });
-    }
-    
-    // 技能雷达图
-    if (!skillRadarChart && document.getElementById('skillRadarChart')) {
-      skillRadarChart = echarts.init(document.getElementById('skillRadarChart'));
-      const radarData = getSkillRadarData();
-      const hasData = radarData.some(val => val > 0);
-      
-      skillRadarChart.setOption({
-        title: {
-          text: '技能分布',
-          left: 'center'
-        },
-        graphic: {
-          type: 'text',
-          left: 'center',
-          top: 'middle',
-          style: {
-            text: hasData ? '' : '暂无技能数据',
-            textAlign: 'center',
-            fill: '#999',
-            fontSize: 14
+          graphic: {
+            type: 'text',
+            left: 'center',
+            top: 'middle',
+            style: {
+              text: hasData ? '' : '暂无解题记录',
+              textAlign: 'center',
+              fill: '#999',
+              fontSize: 14
+            },
+            invisible: hasData
           },
-          invisible: hasData
-        },
-        radar: {
-          indicator: [
-            { name: 'Web安全', max: 100 },
-            { name: '逆向工程', max: 100 },
-            { name: '密码学', max: 100 },
-            { name: '二进制', max: 100 },
-            { name: '取证分析', max: 100 }
+          tooltip: {
+            trigger: 'axis'
+          },
+          xAxis: {
+            type: 'category',
+            data: getLast7Days()
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [
+            {
+              data: trendData,
+              type: 'line',
+              smooth: true,
+              name: '解题数',
+              color: '#67C23A'
+            }
           ]
-        },
-        series: [
-          {
-            name: '技能雷达',
-            type: 'radar',
-            data: [
-              {
-                value: radarData,
-                name: '能力值',
-                areaStyle: {
-                  color: 'rgba(64, 158, 255, 0.3)'
-                }
-              }
+        });
+      }
+    
+      // 技能雷达图
+      const radarElement = document.getElementById('skillRadarChart');
+      if (!skillRadarChart && radarElement && radarElement.offsetWidth > 0 && radarElement.offsetHeight > 0) {
+        skillRadarChart = echarts.init(radarElement);
+        const radarData = getSkillRadarData();
+        const hasData = radarData.some(val => val > 0);
+        
+        skillRadarChart.setOption({
+          title: {
+            text: '技能分布',
+            left: 'center'
+          },
+          graphic: {
+            type: 'text',
+            left: 'center',
+            top: 'middle',
+            style: {
+              text: hasData ? '' : '暂无技能数据',
+              textAlign: 'center',
+              fill: '#999',
+              fontSize: 14
+            },
+            invisible: hasData
+          },
+          radar: {
+            indicator: [
+              { name: 'Web安全', max: 100 },
+              { name: '逆向工程', max: 100 },
+              { name: '密码学', max: 100 },
+              { name: '二进制', max: 100 },
+              { name: '取证分析', max: 100 }
             ]
-          }
-        ]
-      });
-    }
-  }, 300); // 给DOM一点时间渲染
+          },
+          series: [
+            {
+              name: '技能雷达',
+              type: 'radar',
+              data: [
+                {
+                  value: radarData,
+                  name: '能力值',
+                  areaStyle: {
+                    color: 'rgba(64, 158, 255, 0.3)'
+                  }
+                }
+              ]
+            }
+          ]
+        });
+      }
+    }, 300); // 给DOM一点时间渲染
+  });
 };
 
 // 更新图表
