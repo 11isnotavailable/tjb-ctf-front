@@ -254,6 +254,7 @@ const handleStopAttack = async () => {
     });
     
     await stopAttack(currentAttackId.value);
+    stopAttackProcess();
     ElMessage.success('攻击已停止');
   } catch (error: any) {
     if (error !== 'cancel') {
