@@ -76,7 +76,7 @@
           <template #default="scope">
             <div class="rank-cell" :class="getRankClass(scope.row.rank)">
               <el-icon v-if="scope.row.rank <= 3" class="crown-icon">
-                <Crown />
+                <Trophy />
               </el-icon>
               <span class="rank-text">{{ scope.row.rank }}</span>
             </div>
@@ -144,7 +144,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Trophy, Crown } from '@element-plus/icons-vue'
+import { Trophy } from '@element-plus/icons-vue'
 import {
   getUserBoard,
   getPersonalRank,
