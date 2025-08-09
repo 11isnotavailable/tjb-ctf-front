@@ -32,13 +32,13 @@
           </div>
           <div class="nav-item" @click="goToAttack">
             <el-icon>
-            <CrossSwords />
+              <CrossSwords />
             </el-icon>
             <span>一键攻击</span>
           </div>
           <div class="nav-item" @click="goToDefense">
             <el-icon>
-            <Shield />
+              <Shield />
             </el-icon>
             <span>智能防御</span>
           </div>
@@ -101,8 +101,8 @@ const goToDefense = () => {
   router.push('/home/defend/capture')
 }
 const goToAttack = () => {
-  router.push('/home/attack');
-};
+  router.push('/home/attack')
+}
 </script>
 
 <style scoped>

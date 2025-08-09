@@ -7,13 +7,13 @@
     <div v-if="loading" class="loading-container">
         <el-skeleton :rows="8" animated />
     </div>
-    
+
     <div v-else-if="!question" class="not-found">
         <el-empty description="题目不存在或已被删除">
           <el-button type="primary" @click="router.push('/home/questions')">返回题目列表</el-button>
         </el-empty>
     </div>
-    
+
       <div v-else>
         <div class="question-container">
           <!-- 左侧：题目信息和拓扑图 -->
@@ -52,7 +52,7 @@
         </div>
         </div>
       </div>
-      
+
               <!-- 题目描述 -->
               <div class="question-description">
                 <h3>📝 题目描述</h3>
@@ -64,9 +64,9 @@
                 <h3>🖼️ 网络拓扑图</h3>
                 <div class="topology-link-container">
                   <p class="link-description">点击下方按钮在新标签页中查看该题目的网络拓扑图：</p>
-                  <a 
-                    :href="getTopologyImageUrl()" 
-                    target="_blank" 
+                  <a
+                    :href="getTopologyImageUrl()"
+                    target="_blank"
                     rel="noopener noreferrer"
                     class="topology-link"
                   >
@@ -275,7 +275,7 @@
               <div v-if="userRecords.length === 0" class="empty-records">
                 <el-empty description="暂无提交记录" :image-size="80" />
       </div>
-      
+
               <div v-else class="records-list">
                 <div v-for="record in userRecords.slice(0, 5)" :key="record.record_id" class="record-item">
                   <div class="record-status">
@@ -513,7 +513,7 @@ const parsedAccessList = computed(() => {
 // 获取题目详情
 const fetchQuestionDetail = async () => {
   loading.value = true;
-  
+
   try {
     const response = await getQuestionDetail(questionId.value);
     question.value = response.data;
@@ -590,8 +590,8 @@ const startEnvironment = async () => {
 // 格式化访问URL
 const formatAccessUrl = (address: string) => {
   // 硬编码IP地址
-  const HARDCODED_IP = '81.70.202.254';
-  
+  const HARDCODED_IP = 'http://81.70.202.254';
+
   // 如果地址已经包含协议，提取端口号并替换IP
   if (address.startsWith('http://') || address.startsWith('https://')) {
     const portMatch = address.match(/:(\d+)(?:\/|$)/);
@@ -696,9 +696,9 @@ const submitFlag = async () => {
     ElMessage.warning('请输入Flag');
     return;
   }
-  
+
   submitting.value = true;
-  
+
   try {
     const response = await submitFlagAPI(questionId.value, {
       flag: submitForm.value.flag.trim()
@@ -713,20 +713,20 @@ const submitFlag = async () => {
     // 实际响应结构经过拦截器处理后是: { code: 200, message: 'flag正确', data: null }
     const responseCode = response?.code;
     const responseMessage = response?.message;
-    
+
     console.log('responseCode类型:', typeof responseCode, '值:', responseCode);
     console.log('responseMessage类型:', typeof responseMessage, '值:', responseMessage);
     console.log('严格相等判断 responseCode === 200:', responseCode === 200);
     console.log('严格相等判断 responseMessage === "flag正确":', responseMessage === 'flag正确');
-    
-    const isCorrect = responseCode === 200 && 
-                     responseMessage && 
-                     (responseMessage === 'flag正确' || 
+
+    const isCorrect = responseCode === 200 &&
+                     responseMessage &&
+                     (responseMessage === 'flag正确' ||
                       responseMessage.includes('正确') ||
                       responseMessage.includes('成功'));
 
     console.log('isCorrect判断结果:', isCorrect);
-    
+
     if (isCorrect) {
       console.log('进入正确分支');
       ElMessage.success(`🎉 恭喜！Flag正确！${response.data?.rank ? `您是第 ${response.data.rank} 个解出此题的人！` : ''}`);
@@ -862,7 +862,7 @@ const startContainerStatusCheck = () => {
       // 如果是404错误，需要区分情况处理
       if (error?.response?.status === 404) {
         const errorMessage = error?.response?.data?.message || '';
-        
+
         // 如果明确提示容器不存在，说明容器已被删除，清理本地状态
         if (errorMessage.includes('容器不存在') || errorMessage.includes('不存在')) {
           console.log('容器已不存在，清理本地状态');
@@ -871,7 +871,7 @@ const startContainerStatusCheck = () => {
           stopContainerStatusCheck();
           return;
         }
-        
+
         // 其他404情况（容器还未准备好），继续重试
         console.log('容器还未准备好，继续等待...');
         return;
@@ -1631,4 +1631,4 @@ onBeforeUnmount(() => {
     font-size: 0.95rem;
   }
 }
-</style> 
+</style>
