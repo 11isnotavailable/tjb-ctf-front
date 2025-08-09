@@ -82,6 +82,12 @@ const routes = [
         meta: { title: '攻击链路分析 - 智能防御' },
       },
       {
+        path: 'defend/actor',
+        name: 'DefendActor',
+        component: () => import('@/views/defend/DefendActorView.vue'),
+        meta: { title: '防御执行 - 智能防御' },
+      },
+      {
         path: 'attack',
         name: 'Attack',
         component: () => import('@/views/AttackView.vue'),

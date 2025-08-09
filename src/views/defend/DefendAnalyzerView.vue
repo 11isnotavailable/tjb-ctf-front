@@ -16,6 +16,12 @@ const isAnalyzing = ref(false)
 const pcapAnalysisResult = ref('')
 const logAnalysisResult = ref('')
 
+// 报告选择状态
+const selectedReports = ref({
+  pcap: true,
+  log: true
+})
+
 // 当前上下文信息
 const context = ref({ containerId: 0, questionId: 0 })
 const fileData = ref<{ pcapFiles: string[], logFiles: string[] }>({ pcapFiles: [], logFiles: [] })
@@ -51,14 +57,14 @@ onMounted(() => {
 
   if (!currentContext.containerId) {
     ElMessage.error('未找到上下文信息，请重新开始流程')
-    router.push('/home/defend/pcap')
+    router.push('/home/defend/capture')
     return
   }
 
   const files = getFilesFromLocal(currentContext.containerId)
   if (!files) {
     ElMessage.error('未找到文件信息，请重新捕获数据')
-    router.push('/home/defend/pcap')
+    router.push('/home/defend/capture')
     return
   }
 
@@ -89,11 +95,13 @@ async function startAnalysis() {
     logAnalysisResult.value = logResult
 
     // 保存分析报告到localStorage
-    const report: AnalysisReport = {
-      pcapReport: pcapResult,
-      logReport: logResult
-    }
-    saveAnalysisReport(context.value.containerId, report)
+    // const report: AnalysisReport = {
+    //  pcapReport: pcapResult,
+    //  logReport: logResult
+    //}
+    // saveAnalysisReport(context.value.containerId, report)
+
+    // 点击下一步的时候保存
 
     stopMessageRotation()
     currentStep.value = 'results'
@@ -177,7 +185,24 @@ function stopMessageRotation() {
 
 // 跳转到下一步
 function goToDefense() {
-  router.push('/home/defend/defense')
+  // 验证至少选择一份报告
+  if (!selectedReports.value.pcap && !selectedReports.value.log) {
+    ElMessage.warning('请至少选择一份报告进行防御分析')
+    return
+  }
+
+  // 保存选择的报告到localStorage
+  const selectedReportData: any = {}
+  if (selectedReports.value.pcap) {
+    selectedReportData.pcapReport = pcapAnalysisResult.value
+  }
+  if (selectedReports.value.log) {
+    selectedReportData.logReport = logAnalysisResult.value
+  }
+
+  saveAnalysisReport(context.value.containerId, selectedReportData)
+
+  router.push('/home/defend/actor')
 }
 
 // 组件销毁时清理
@@ -341,6 +366,27 @@ onMounted(() => {
               ></div>
             </el-card>
           </div>
+        </div>
+
+        <!-- 报告选择 -->
+        <div class="report-selection">
+          <el-card class="selection-card">
+            <div class="selection-header">
+              <h2 class="selection-title">选择报告</h2>
+              <p class="selection-desc">
+                请选择要用于防御分析的报告，至少选择一份
+              </p>
+            </div>
+
+            <div class="selection-options">
+              <el-checkbox v-model="selectedReports.pcap">
+                数据包分析报告
+              </el-checkbox>
+              <el-checkbox v-model="selectedReports.log">
+                日志分析报告
+              </el-checkbox>
+            </div>
+          </el-card>
         </div>
 
         <!-- 下一步按钮 -->
@@ -687,6 +733,35 @@ onMounted(() => {
   border-radius: 4px;
 }
 
+.report-selection {
+  margin-top: 40px;
+}
+
+.selection-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+}
+
+.selection-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+.selection-desc {
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+.selection-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 下一步按钮样式 */
 .next-section {
   text-align: center;
 }
