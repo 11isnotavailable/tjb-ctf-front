@@ -59,6 +59,22 @@
                 <div class="description-content" v-html="formatDescription(question.introduction)"></div>
               </div>
 
+              <!-- 查看拓扑图区域 -->
+              <div class="topology-section">
+                <h3>🖼️ 网络拓扑图</h3>
+                <div class="topology-link-container">
+                  <p class="link-description">点击下方按钮在新标签页中查看该题目的网络拓扑图：</p>
+                  <a 
+                    :href="getTopologyImageUrl()" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="topology-link"
+                  >
+                    🖼️ 查看拓扑图
+                  </a>
+                </div>
+              </div>
+
               <!-- Flag提交区域 -->
               <div class="submit-section">
                 <h3>🏁 提交Flag</h3>
@@ -1008,6 +1024,11 @@ const getTagType = (tag: string) => {
   return tagTypes[tag.toLowerCase()] || 'info';
 };
 
+// 获取拓扑图URL
+const getTopologyImageUrl = () => {
+  return `http://81.70.202.254:5005/api/deploy/topology_image/question/${questionId.value}`;
+};
+
 onMounted(() => {
   fetchQuestionDetail();
 });
@@ -1133,6 +1154,65 @@ onBeforeUnmount(() => {
   font-size: 16px;
   line-height: 1.8;
   color: #495057;
+}
+
+/* 拓扑图区域样式 */
+.topology-section {
+  margin-bottom: 30px;
+  padding: 25px;
+  background: linear-gradient(135deg, #e8f4f8 0%, #f0f8ff 100%);
+  border-radius: 8px;
+  border-left: 4px solid #17a2b8;
+}
+
+.topology-section h3 {
+  color: #2c3e50;
+  font-size: 18px;
+  margin-bottom: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topology-link-container {
+  text-align: center;
+  margin: 20px 0;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #e9ecef;
+}
+
+.link-description {
+  color: #6c757d;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.topology-link {
+  display: inline-block;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+.topology-link:hover {
+  background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(40, 167, 69, 0.3);
+  text-decoration: none;
+  color: white;
+}
+
+.topology-link:active {
+  transform: translateY(0);
 }
 
 .environment-section,
@@ -1544,6 +1624,11 @@ onBeforeUnmount(() => {
 
   .secondary-actions {
     flex-direction: column;
+  }
+
+  .topology-link {
+    padding: 14px 20px;
+    font-size: 0.95rem;
   }
 }
 </style> 
