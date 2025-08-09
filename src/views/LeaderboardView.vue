@@ -48,64 +48,61 @@
     </div>
 
     <!-- 个人排名信息 -->
-    <div v-if="personalRank.length > 0" class="personal-rank">
+    <div v-if="personalRank.length > 0" class="personal-rank-section">
       <h3>我的排名</h3>
       <div class="rank-cards">
-        <div
-          v-for="rank in personalRank"
-          :key="orderType"
-          class="rank-card"
-        >
-          <div class="rank-value">{{ rank.rank || 'N/A' }}</div>
+        <div v-for="rank in personalRank" :key="rank.metric" class="rank-card">
           <div class="rank-info">
-            <div class="rank-score">{{ rank.score }} 分</div>
-            <div class="rank-total">共 {{ rank.total }} 人</div>
+            <div class="rank-label">{{ rank.metric }}</div>
+            <div class="rank-value">
+              <span class="rank-number">#{{ rank.rank }}</span>
+              <span class="rank-score">{{ rank.score }}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 排行榜表格 -->
-    <div class="leaderboard-table">
+    <!-- 排行榜数据 -->
+    <div v-if="hasSelectedTag" class="leaderboard-section">
       <el-table
-        v-loading="loading"
         :data="leaderboardData"
-        stripe
-        highlight-current-row
+        v-loading="loading"
+        style="width: 100%"
         @row-click="onRowClick"
+        row-class-name="table-row"
       >
         <el-table-column prop="rank" label="排名" width="80" align="center">
           <template #default="scope">
-            <div class="rank-badge" :class="getRankClass(scope.row.rank)">
-              <el-icon v-if="scope.row.rank <= 3"><Crown /></el-icon>
-              {{ scope.row.rank }}
+            <div class="rank-cell" :class="getRankClass(scope.row.rank)">
+              <el-icon v-if="scope.row.rank <= 3" class="crown-icon">
+                <Crown />
+              </el-icon>
+              <span class="rank-text">{{ scope.row.rank }}</span>
             </div>
           </template>
         </el-table-column>
         
         <el-table-column prop="username" label="用户名" min-width="150">
           <template #default="scope">
-            <div class="user-info">
-              <el-avatar
-                :size="32"
-                :src="`https://api.dicebear.com/7.x/initials/svg?seed=${scope.row.username}`"
-              />
+            <div class="user-cell">
+              <div class="user-avatar">
+                {{ scope.row.username.charAt(0).toUpperCase() }}
+              </div>
               <span class="username">{{ scope.row.username }}</span>
             </div>
           </template>
         </el-table-column>
         
-        <el-table-column prop="email" label="邮箱" width="200" show-overflow-tooltip />
-        
-        <el-table-column prop="score" label="总分" width="100" align="center">
+        <el-table-column prop="total_score" label="总分" width="120" align="center">
           <template #default="scope">
-            <span class="score-value">{{ scope.row.score }}</span>
+            <span class="score-text">{{ scope.row.total_score }}</span>
           </template>
         </el-table-column>
         
         <el-table-column prop="solve_count" label="解题数" width="100" align="center">
           <template #default="scope">
-            <el-tag type="success" size="small">{{ scope.row.solve_count }}</el-tag>
+            <span class="solve-count">{{ scope.row.solve_count }}</span>
           </template>
         </el-table-column>
         
@@ -156,13 +153,21 @@ import {
   type ScoreRankDTO,
   type UserBoardRequest
 } from '@/api/leaderboard'
-import { getAllTags, type Tag } from '@/api/tag'
-// 移除 date-fns 依赖，使用简单的时间格式化
+
+// 简化的Tag类型，避免依赖不存在的API
+interface Tag {
+  tag_id: number
+  tag: string
+}
 
 // 响应式数据
 const loading = ref(false)
-const tags = ref<Tag[]>([])
-const selectedTagId = ref<number>()
+const tags = ref<Tag[]>([
+  { tag_id: 1, tag: "默认比赛" },
+  { tag_id: 2, tag: "Web安全" },
+  { tag_id: 3, tag: "二进制" }
+])
+const selectedTagId = ref<number>(1) // 默认选择第一个标签
 const orderType = ref<'score' | 'solve_count' | 'submit'>('score')
 const currentPage = ref(1)
 const pageSize = ref(20)
@@ -174,22 +179,6 @@ const personalRank = ref<ScoreRankDTO[]>([])
 const hasSelectedTag = computed(() => selectedTagId.value !== undefined)
 
 // 方法
-const loadTags = async () => {
-  try {
-    const response = await getAllTags()
-    if (response.data.code === 200 && response.data.data) {
-      tags.value = response.data.data
-      // 默认选择第一个标签
-      if (tags.value.length > 0) {
-        selectedTagId.value = tags.value[0].tag_id
-      }
-    }
-  } catch (error) {
-    console.error('加载标签失败:', error)
-    ElMessage.error('加载标签列表失败')
-  }
-}
-
 const loadLeaderboard = async () => {
   if (!hasSelectedTag.value) return
   
@@ -301,9 +290,10 @@ watch(hasSelectedTag, (hasTag) => {
   }
 })
 
-// 组件挂载
+// 组件挂载时加载数据
 onMounted(async () => {
-  await loadTags()
+  // 直接加载排行榜数据，使用默认标签
+  await refreshData()
 })
 </script>
 
@@ -321,18 +311,23 @@ onMounted(async () => {
 .page-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 16px 0;
+  gap: 12px;
   font-size: 28px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-weight: bold;
+  color: #303133;
+  margin-bottom: 20px;
+}
+
+.page-title .el-icon {
+  font-size: 32px;
+  color: #f39c12;
 }
 
 .filters {
   display: flex;
   gap: 24px;
-  flex-wrap: wrap;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .filter-group {
@@ -348,7 +343,7 @@ onMounted(async () => {
 }
 
 .tag-select, .order-select {
-  width: 200px;
+  min-width: 180px;
 }
 
 .option-desc {
@@ -357,106 +352,141 @@ onMounted(async () => {
   margin-left: 8px;
 }
 
-.personal-rank {
+.personal-rank-section {
+  margin-bottom: 24px;
+  padding: 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
   color: white;
 }
 
-.personal-rank h3 {
+.personal-rank-section h3 {
   margin: 0 0 16px 0;
   font-size: 18px;
-  font-weight: 600;
 }
 
 .rank-cards {
   display: flex;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .rank-card {
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
   padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  border-radius: 8px;
   backdrop-filter: blur(10px);
+  min-width: 120px;
+}
+
+.rank-label {
+  font-size: 12px;
+  opacity: 0.9;
+  margin-bottom: 4px;
 }
 
 .rank-value {
-  font-size: 32px;
-  font-weight: bold;
-  line-height: 1;
-}
-
-.rank-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+}
+
+.rank-number {
+  font-size: 20px;
+  font-weight: bold;
 }
 
 .rank-score {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 14px;
+  opacity: 0.9;
 }
 
-.rank-total {
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-.leaderboard-table {
+.leaderboard-section {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.rank-badge {
+.table-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.table-row:hover {
+  background-color: #f5f7fa;
+}
+
+.rank-cell {
   display: flex;
   align-items: center;
+  gap: 8px;
   justify-content: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-weight: 600;
-  background: #f5f7fa;
-  color: #606266;
 }
 
-.rank-badge.rank-first {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #8b6914;
+.crown-icon {
+  font-size: 16px;
 }
 
-.rank-badge.rank-second {
-  background: linear-gradient(135deg, #c0c0c0, #e5e5e5);
-  color: #5a5a5a;
+.rank-first .crown-icon {
+  color: #f1c40f;
 }
 
-.rank-badge.rank-third {
-  background: linear-gradient(135deg, #cd7f32, #daa520);
-  color: #654321;
+.rank-second .crown-icon {
+  color: #95a5a6;
 }
 
-.user-info {
+.rank-third .crown-icon {
+  color: #e67e22;
+}
+
+.rank-text {
+  font-weight: bold;
+}
+
+.rank-first .rank-text {
+  color: #f1c40f;
+}
+
+.rank-second .rank-text {
+  color: #95a5a6;
+}
+
+.rank-third .rank-text {
+  color: #e67e22;
+}
+
+.user-cell {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
 }
 
 .username {
   font-weight: 500;
-  color: #303133;
 }
 
-.score-value {
-  font-weight: 600;
+.score-text {
+  font-weight: bold;
   color: #409eff;
-  font-size: 16px;
+}
+
+.solve-count {
+  font-weight: 500;
+  color: #67c23a;
 }
 
 .solve-time {
@@ -470,13 +500,12 @@ onMounted(async () => {
 }
 
 .pagination-wrapper {
+  margin-top: 24px;
   display: flex;
   justify-content: center;
-  padding: 20px;
-  border-top: 1px solid #ebeef5;
 }
 
-/* 响应式设计 */
+/* 响应式样式 */
 @media (max-width: 768px) {
   .leaderboard-container {
     padding: 16px;
@@ -505,32 +534,5 @@ onMounted(async () => {
   .rank-card {
     justify-content: center;
   }
-}
-
-/* 表格样式优化 */
-:deep(.el-table) {
-  border: none;
-}
-
-:deep(.el-table th) {
-  background: #fafbfc;
-  border-bottom: 2px solid #ebeef5;
-}
-
-:deep(.el-table td) {
-  border-bottom: 1px solid #f0f2f5;
-}
-
-:deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
-  background: #fafbfc;
-}
-
-:deep(.el-table__body tr:hover > td) {
-  background-color: #f5f7fa !important;
-}
-
-/* 加载状态 */
-:deep(.el-loading-mask) {
-  border-radius: 12px;
 }
 </style>
