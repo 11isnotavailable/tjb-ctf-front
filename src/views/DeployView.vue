@@ -593,79 +593,7 @@
       </div>
     </div>
 
-    <!-- 第五步：部署完成 -->
-    <div v-if="currentStep === 5" class="step-content">
-      <div class="form-card">
-        <div class="form-header">
-          <h2>🎉 部署完成</h2>
-          <p>CTF题目部署已完成，可以进行后续操作</p>
-        </div>
 
-        <div class="form-body">
-          <div class="completion-content">
-            <div class="completion-icon">✅</div>
-            <h3>恭喜！题目部署成功</h3>
-            <p class="completion-description">
-              您的CTF题目已成功创建并完成所有配置步骤。
-            </p>
-
-            <!-- 部署摘要信息 -->
-            <div class="deployment-summary">
-              <h4>📋 部署摘要</h4>
-              <div class="summary-grid">
-                <div class="summary-item">
-                  <div class="summary-label">题目ID:</div>
-                  <div class="summary-value">{{ questionId || '未设置' }}</div>
-                </div>
-                <div class="summary-item">
-                  <div class="summary-label">部署ID:</div>
-                  <div class="summary-value">{{ deployId || '未设置' }}</div>
-                </div>
-                <div class="summary-item">
-                  <div class="summary-label">题目名称:</div>
-                  <div class="summary-value">{{ formData.title }}</div>
-                </div>
-                <div class="summary-item">
-                  <div class="summary-label">选择标签:</div>
-                  <div class="summary-value">{{ getSelectedTagName() }}</div>
-                </div>
-                <div class="summary-item">
-                  <div class="summary-label">难度等级:</div>
-                  <div class="summary-value">{{ getDifficultyText(formData.difficulty) }}</div>
-                </div>
-                <div class="summary-item">
-                  <div class="summary-label">有效时间:</div>
-                  <div class="summary-value">{{ formatTime(formData.validTime) }}</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 占位内容区域 -->
-            <div class="placeholder-content">
-              <h4>⏳ 待完善功能</h4>
-              <p class="placeholder-text">此区域将在后续版本中添加更多功能...</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 导航按钮 -->
-        <div class="card-footer">
-          <button
-            class="nav-btn prev-btn"
-            @click="prevStep"
-          >
-            ← 上一步
-          </button>
-          <button
-            v-if="generationState === 'completed'"
-            class="nav-btn next-btn"
-            @click="nextStep"
-          >
-            下一步 →
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- 第五步：生成Docker Compose -->
     <div v-if="currentStep === 5" class="step-content">
