@@ -34,13 +34,13 @@ export interface UserBoardRequest {
 
 // 获取用户排行榜
 export const getUserBoard = async (params: UserBoardRequest): Promise<PagedResponse<UserBoardItemDTO>> => {
-  const { data } = await request.get('/score/userboard', { params })
+  const { data } = await request.get('/userboard', { params })
   return data
 }
 
 // 获取个人排名详情
 export const getPersonalRank = async (tagId: number): Promise<ScoreRankDTO[]> => {
-  const { data } = await request.get(`/score/tag/${tagId}/rank`)
+  const { data } = await request.get(`/tag/${tagId}/rank`)
   return data
 }
 
