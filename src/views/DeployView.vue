@@ -780,8 +780,201 @@
       </div>
     </div>
 
-    <!-- 第六步：部署完成 -->
+    <!-- 第六步：部署到题目 -->
     <div v-if="currentStep === 6" class="step-content">
+      <div class="form-card">
+        <div class="form-header">
+          <h3>🚀 部署到题目</h3>
+          <p>配置部署参数并将Docker环境部署到CTF题目</p>
+        </div>
+
+        <div class="deploy-configuration">
+          <!-- 基本部署信息 -->
+          <div class="deploy-info-section">
+            <h4>📋 部署信息</h4>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">题目ID:</span>
+                <span class="info-value">{{ questionId || '未设置' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">部署ID:</span>
+                <span class="info-value">{{ deployId || '未设置' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 部署参数配置 -->
+          <div class="deploy-params-section">
+            <h4>⚙️ 部署参数配置</h4>
+            
+            <!-- Docker类型配置 -->
+            <div class="param-group">
+              <label class="param-label">Docker类型:</label>
+              <select 
+                v-model="deployConfig.dockerType"
+                class="param-select"
+              >
+                <option value="">请选择Docker类型</option>
+                <option value="STATIC">STATIC - 静态部署</option>
+                <option value="DYNAMIC">DYNAMIC - 动态部署</option>
+                <option value="ISOLATED">ISOLATED - 隔离部署</option>
+              </select>
+            </div>
+
+            <!-- FRP隧道类型配置 -->
+            <div class="param-group">
+              <label class="param-label">FRP隧道类型:</label>
+              <select v-model="deployConfig.frpType" class="param-select">
+                <option value="">请选择隧道类型</option>
+                <option value="TCP">TCP</option>
+                <option value="UDP">UDP</option>
+                <option value="HTTP">HTTP</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 端口配置区域 -->
+          <div class="ports-config-section">
+            <h4>🔌 端口配置</h4>
+            <div v-if="detectedPorts.length === 0" class="no-ports-message">
+              <span class="no-ports-icon">📭</span>
+              <p>未在Docker Compose文件中检测到需要配置的端口</p>
+              <p class="no-ports-hint">请确保Docker Compose文件已生成并包含#PORT1#、#PORT2#等端口占位符</p>
+            </div>
+            
+            <div v-else class="ports-list">
+              <div 
+                v-for="(port, index) in detectedPorts" 
+                :key="index" 
+                class="port-config-item"
+              >
+                <div class="port-header">
+                  <span class="port-number">端口 {{ port.portNumber }}</span>
+                  <span class="port-hint">81.70.202.254:{{ port.targetPort }}</span>
+                </div>
+                
+                <div class="port-form">
+                  <div class="port-field">
+                    <label>服务名称:</label>
+                    <input 
+                      v-model="port.config.name" 
+                      type="text" 
+                      class="port-input"
+                      placeholder="请输入服务名称"
+                    />
+                  </div>
+                  
+                  <div class="port-field">
+                    <label>FRP类型:</label>
+                    <select v-model="port.config.frp_type" class="port-select">
+                      <option value="">请选择</option>
+                      <option value="TCP">TCP</option>
+                      <option value="UDP">UDP</option>
+                      <option value="HTTP">HTTP</option>
+                    </select>
+                  </div>
+                  
+                  <div class="port-field">
+                    <label>描述信息:</label>
+                    <input 
+                      v-model="port.config.description" 
+                      type="text" 
+                      class="port-input"
+                      placeholder="请输入服务描述"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 部署预览 -->
+          <div v-if="canPreviewDeploy" class="deploy-preview-section">
+            <h4>👀 部署预览</h4>
+            <div class="preview-config">
+              <pre class="config-preview">{{ formatDeployConfig() }}</pre>
+            </div>
+          </div>
+
+          <!-- 部署操作区域 -->
+          <div class="deploy-action-section">
+            <!-- 准备部署状态 -->
+            <div v-if="deployState === 'idle'" class="deploy-idle">
+              <div class="deploy-ready-icon">🚀</div>
+              <h4>准备部署到题目</h4>
+              <p>点击下方按钮将Docker环境部署到CTF题目</p>
+              <button 
+                class="deploy-submit-btn" 
+                @click="startDeploy"
+                :disabled="!canDeploy"
+              >
+                🎯 开始部署
+              </button>
+              <p v-if="!canDeploy" class="deploy-disabled-hint">
+                请完成所有必填配置项后再进行部署
+              </p>
+            </div>
+
+            <!-- 部署进行中 -->
+            <div v-if="deployState === 'deploying'" class="deploy-processing">
+              <div class="deploy-spinner">
+                <div class="spinner-circle"></div>
+              </div>
+              <h4>🔄 正在部署</h4>
+              <p>正在将Docker环境部署到题目中，请稍候...</p>
+            </div>
+
+            <!-- 部署成功 -->
+            <div v-if="deployState === 'success'" class="deploy-success">
+              <div class="deploy-success-icon">✅</div>
+              <h4>部署成功！</h4>
+              <p>Docker环境已成功部署到CTF题目</p>
+              <div class="deploy-result-info">
+                <div class="result-item">
+                  <span class="result-label">题目ID:</span>
+                  <span class="result-value">{{ questionId }}</span>
+                </div>
+                <div class="result-item">
+                  <span class="result-label">部署ID:</span>
+                  <span class="result-value">{{ deployId }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 部署失败 -->
+            <div v-if="deployState === 'failed'" class="deploy-failed">
+              <div class="deploy-error-icon">❌</div>
+              <h4>部署失败</h4>
+              <p class="deploy-error-message">{{ deployError }}</p>
+              <button class="deploy-retry-btn" @click="startDeploy">
+                🔄 重试部署
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 导航按钮 -->
+        <div class="card-footer">
+          <button
+            class="nav-btn prev-btn"
+            @click="prevStep"
+          >
+            ← 上一步
+          </button>
+          <button
+            v-if="deployState === 'success'"
+            class="nav-btn next-btn"
+            @click="nextStep"
+          >
+            完成 →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 第七步：部署完成 -->
+    <div v-if="currentStep === 7" class="step-content">
       <div class="form-card">
         <div class="form-header">
           <h3>🎉 部署完成</h3>
@@ -875,11 +1068,13 @@ import {
   getTopologyImage,
   generateDockerCompose,
   getComposeFile,
+  deployToQuestion,
   type InputScenarioRequest,
   type InputDevicesRequest,
   type GenerateTopologyRequest,
   type TopologyImageResponse,
   type ComposeFileResponse,
+  type DeployToQuestionRequest,
   type DeviceZone,
   type TargetMachine
 } from '@/api/deploy'
@@ -1455,6 +1650,31 @@ const tagOptions = ref<Tag[]>([
   { tag_id: 5, tag: '恶意软件分析' }
 ])
 
+// 第六步：部署配置相关状态
+const deployConfig = ref({
+  dockerType: '',
+  frpType: ''
+})
+
+const deployState = ref<'idle' | 'deploying' | 'success' | 'failed'>('idle')
+const deployError = ref('')
+
+// 检测到的端口配置
+const detectedPorts = ref<Array<{
+  portNumber: string,
+  targetPort: string,
+  config: {
+    name: string,
+    frp_type: string,
+    description: string
+  }
+}>>([])
+
+// Docker Compose相关状态
+const dockerGenerationState = ref<'idle' | 'generating' | 'completed' | 'failed'>('idle')
+const dockerGenerationError = ref('')
+const dockerComposeContent = ref('')
+
 // 页面加载时的钩子（已移除标签API调用）
 // onMounted(() => {
 //   fetchTags()
@@ -1503,10 +1723,7 @@ const currentSubnetConfig = ref(null)
 // 节点ID计数器
 const nodeIdCounter = ref(1)
 
-// 第五步：Docker Compose生成状态
-const dockerGenerationState = ref('idle') // 'idle', 'generating', 'completed', 'failed'
-const dockerComposeContent = ref('')
-const dockerGenerationError = ref('')
+// 第五步：Docker Compose生成状态 (已在上面声明)
 
 // 计算属性
 const canProceed = computed(() => {
@@ -1539,9 +1756,27 @@ const canSubmit = computed(() => {
   return formData.value.requirements.trim() !== ''
 })
 
+// 第六步相关计算属性
+const canPreviewDeploy = computed(() => {
+  return deployConfig.value.dockerType.trim() !== '' &&
+         deployConfig.value.frpType.trim() !== '' &&
+         detectedPorts.value.every(port => 
+           port.config.name.trim() !== '' &&
+           port.config.frp_type.trim() !== '' &&
+           port.config.description.trim() !== ''
+         )
+})
+
+const canDeploy = computed(() => {
+  return canPreviewDeploy.value &&
+         questionId.value &&
+         deployId.value &&
+         dockerComposeContent.value.trim() !== ''
+})
+
 // 方法
 const nextStep = async () => {
-  if (!canProceed.value || currentStep.value > 6) {
+  if (!canProceed.value || currentStep.value > 7) {
     return
   }
 
@@ -1559,6 +1794,13 @@ const nextStep = async () => {
     } else if (currentStep.value === 4) {
       // 第四步完成时，直接进入第五步
       // 无需额外处理，直接跳转
+    } else if (currentStep.value === 5) {
+      // 第五步完成时，解析Docker Compose内容检测端口
+      await parseDockerComposeForPorts()
+    } else if (currentStep.value === 6) {
+      // 第六步完成时，调用部署API
+      // 部署成功时才会进入第七步
+      return // 部署操作由 startDeploy 方法处理
     }
 
     currentStep.value++
@@ -2458,6 +2700,116 @@ const createNew = () => {
   processingProgress.value = 0
 
   ElMessage.success('已重置所有数据，可以开始创建新题目')
+}
+
+// 第六步：端口解析和部署相关方法
+const parseDockerComposeForPorts = async () => {
+  try {
+    const content = dockerComposeContent.value
+    if (!content) {
+      ElMessage.warning('没有找到Docker Compose内容')
+      return
+    }
+
+    // 解析端口占位符的正则表达式：匹配 #PORT[1-9]\d*#:端口号
+    const portRegex = /#PORT(\d+)#:(\d+)/g
+    const foundPorts = []
+    
+    let match
+    while ((match = portRegex.exec(content)) !== null) {
+      const portNumber = match[1]
+      const targetPort = match[2]
+      
+      // 只处理PORT1、PORT2等，不处理PORT0
+      if (parseInt(portNumber) > 0) {
+        foundPorts.push({
+          portNumber: portNumber,
+          targetPort: targetPort,
+          config: {
+            name: '',
+            frp_type: '',
+            description: ''
+          }
+        })
+      }
+    }
+
+    detectedPorts.value = foundPorts
+    
+    if (foundPorts.length > 0) {
+      ElMessage.success(`检测到 ${foundPorts.length} 个需要配置的端口`)
+    } else {
+      ElMessage.info('未检测到需要配置的端口占位符')
+    }
+
+  } catch (error) {
+    console.error('解析Docker Compose端口失败:', error)
+    ElMessage.error('解析端口配置失败')
+  }
+}
+
+const formatDeployConfig = () => {
+  // 格式化部署配置预览
+  const config = {
+    deploy_id: deployId.value,
+    question_id: questionId.value,
+    docker_type: deployConfig.value.dockerType,
+    frp_type: deployConfig.value.frpType,
+    config: {
+      extend_ports: detectedPorts.value.map(port => ({
+        name: port.config.name,
+        frp_type: port.config.frp_type,
+        description: port.config.description
+      }))
+    }
+  }
+  
+  return JSON.stringify(config, null, 2)
+}
+
+const startDeploy = async () => {
+  try {
+    deployState.value = 'deploying'
+    deployError.value = ''
+
+    // 构建部署请求数据
+    const deployRequestData: DeployToQuestionRequest = {
+      deploy_id: deployId.value!,
+      question_id: questionId.value!,
+      docker_type: deployConfig.value.dockerType as any,
+      frp_type: deployConfig.value.frpType as any,
+      config: {
+        extend_ports: detectedPorts.value.map(port => ({
+          name: port.config.name,
+          frp_type: port.config.frp_type as any,
+          description: port.config.description
+        }))
+      }
+    }
+
+    console.log('开始部署，请求数据:', deployRequestData)
+    
+    // 调用真实的部署API
+    const response = await deployToQuestion(deployRequestData)
+    
+    if (response.code !== 200) {
+      throw new Error(response.message || '部署失败')
+    }
+    
+    deployState.value = 'success'
+    ElMessage.success('部署成功！')
+    
+    // 部署成功后自动进入下一步
+    setTimeout(() => {
+      currentStep.value = 7
+    }, 1000)
+
+  } catch (error: any) {
+    console.error('部署失败:', error)
+    deployState.value = 'failed'
+    deployError.value = error.message || '部署过程中发生未知错误'
+    ElMessage.error('部署失败: ' + deployError.value)
+  }
 }
 
 // 拓扑相关方法
@@ -4698,6 +5050,361 @@ const findNodeById = (nodes, targetId) => {
   .topology-link {
     padding: 14px 20px;
     font-size: 0.95rem;
+  }
+}
+
+/* 第六步：部署到题目样式 */
+.deploy-configuration {
+  padding: 20px 0;
+}
+
+.deploy-info-section,
+.deploy-params-section,
+.ports-config-section,
+.deploy-preview-section,
+.deploy-action-section {
+  margin-bottom: 30px;
+}
+
+.deploy-info-section h4,
+.deploy-params-section h4,
+.ports-config-section h4,
+.deploy-preview-section h4 {
+  color: #1e293b;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #475569;
+  min-width: 80px;
+}
+
+.info-value {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.param-group {
+  margin-bottom: 20px;
+}
+
+.param-label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.param-input,
+.param-select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.param-input:focus,
+.param-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.no-ports-message {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 2px dashed #cbd5e0;
+}
+
+.no-ports-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.no-ports-hint {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+.ports-list {
+  space-y: 20px;
+}
+
+.port-config-item {
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.port-config-item:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.port-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+
+.port-number {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1.1rem;
+}
+
+.port-hint {
+  color: #3b82f6;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  background: #eff6ff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.port-form {
+  display: grid;
+  grid-template-columns: 1fr 150px 1fr;
+  gap: 16px;
+  align-items: end;
+}
+
+.port-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.port-field label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.port-input,
+.port-select {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.port-input:focus,
+.port-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.deploy-preview-section {
+  margin-top: 30px;
+}
+
+.preview-config {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 20px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.config-preview {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.deploy-action-section {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.deploy-idle,
+.deploy-processing,
+.deploy-success,
+.deploy-failed {
+  padding: 40px 20px;
+}
+
+.deploy-ready-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.deploy-submit-btn {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+  margin-top: 20px;
+}
+
+.deploy-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.4);
+}
+
+.deploy-submit-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.deploy-disabled-hint {
+  color: #ef4444;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  font-weight: 500;
+}
+
+.deploy-spinner {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.spinner-circle {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.deploy-success-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.deploy-result-info {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.result-label {
+  font-weight: 600;
+  color: #475569;
+}
+
+.result-value {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.deploy-error-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.deploy-error-message {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+}
+
+.deploy-retry-btn {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.deploy-retry-btn:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+  transform: translateY(-1px);
+}
+
+/* 响应式设计 - 第六步 */
+@media (max-width: 768px) {
+  .port-form {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .deploy-result-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .port-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }
 </style>
