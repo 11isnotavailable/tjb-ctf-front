@@ -46,6 +46,12 @@ const routes = [
         meta: { title: '题目详情' },
       },
       {
+        path: 'leaderboard',
+        name: 'Leaderboard',
+        component: () => import('@/views/LeaderboardView.vue'),
+        meta: { title: '排行榜' },
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/user/ProfileView.vue'),

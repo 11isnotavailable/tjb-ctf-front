@@ -24,6 +24,12 @@
             </el-icon>
             <span>题目</span>
           </div>
+          <div class="nav-item" @click="goToLeaderboard">
+            <el-icon>
+              <Trophy />
+            </el-icon>
+            <span>排行榜</span>
+          </div>
           <div class="nav-item" @click="goToDeploy">
             <el-icon>
               <Monitor />
@@ -73,7 +79,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { HomeFilled, Search, DataLine, List, Monitor } from '@element-plus/icons-vue'
+import { HomeFilled, Search, DataLine, List, Monitor, Trophy } from '@element-plus/icons-vue'
 import CrossSwords from '@/assets/icons/CrossSwords.vue'
 import Shield from '@/assets/icons/Shield.vue'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
@@ -90,6 +96,9 @@ const goToHome = () => {
 }
 const goToQuestions = () => {
   router.push('/home/questions')
+}
+const goToLeaderboard = () => {
+  router.push('/home/leaderboard')
 }
 const goToDeploy = () => {
   router.push('/home/deploy')
