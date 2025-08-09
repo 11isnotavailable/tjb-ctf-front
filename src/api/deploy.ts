@@ -114,3 +114,18 @@ export interface ComposeFileResponse {
 export function getComposeFile(deployId: number) {
   return request.get<ApiResponse<ComposeFileResponse>>(`/deploy/compose-file/${deployId}`);
 }
+
+// 分值配置接口参数
+export interface ScoreConfigRequest {
+  deploy_id: number;
+  question_id: number;
+  decay_type: string;
+  decay: number;
+  min_score: number;
+  max_score: number;
+}
+
+// 配置分值
+export function configureScore(data: ScoreConfigRequest) {
+  return request.post<ApiResponse<null>>('/deploy/score', data);
+}

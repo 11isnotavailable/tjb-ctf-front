@@ -903,14 +903,14 @@
             <p class="section-description">配置此题目的分值策略和衰减规则</p>
             
             <div class="score-config-grid">
-              <!-- 基础分值 -->
+              <!-- 最大分值 -->
               <div class="param-group">
-                <label class="param-label">基础分值:</label>
+                <label class="param-label">最大分值:</label>
                 <input 
-                  v-model.number="scoreConfig.baseScore" 
+                  v-model.number="scoreConfig.max_score" 
                   type="number" 
                   class="param-input"
-                  placeholder="请输入基础分值 (如: 1000)"
+                  placeholder="请输入最大分值 (如: 1000)"
                   min="0"
                 />
               </div>
@@ -919,7 +919,7 @@
               <div class="param-group">
                 <label class="param-label">最小分值:</label>
                 <input 
-                  v-model.number="scoreConfig.minScore" 
+                  v-model.number="scoreConfig.min_score" 
                   type="number" 
                   class="param-input"
                   placeholder="请输入最小分值 (如: 200)"
@@ -931,7 +931,7 @@
               <div class="param-group">
                 <label class="param-label">衰减类型:</label>
                 <select 
-                  v-model="scoreConfig.decayType"
+                  v-model="scoreConfig.decay_type"
                   class="param-select"
                 >
                   <option value="">请选择衰减类型</option>
@@ -945,7 +945,7 @@
               <div class="param-group">
                 <label class="param-label">衰减因子:</label>
                 <input 
-                  v-model.number="scoreConfig.decayFactor" 
+                  v-model.number="scoreConfig.decay" 
                   type="number" 
                   class="param-input"
                   placeholder="请输入衰减因子 (如: 0.8)"
@@ -955,29 +955,19 @@
                 />
               </div>
 
-              <!-- 首次解决奖励 -->
-              <div class="param-group">
-                <label class="param-label">首次解决奖励:</label>
-                <input 
-                  v-model.number="scoreConfig.firstBloodBonus" 
-                  type="number" 
-                  class="param-input"
-                  placeholder="请输入首次解决奖励 (如: 100)"
-                  min="0"
-                />
-              </div>
+
             </div>
 
             <!-- 分值配置说明 -->
             <div class="score-config-tips">
               <h5>💡 配置说明</h5>
               <ul>
-                <li><strong>STATIC:</strong> 分值不随时间变化，始终为基础分值</li>
+                <li><strong>最大分值:</strong> 题目的初始分值（未衰减时的分值）</li>
+                <li><strong>最小分值:</strong> 分值衰减的下限</li>
+                <li><strong>STATIC:</strong> 分值不随时间变化，始终为最大分值</li>
                 <li><strong>LINEAR:</strong> 分值随解题人数线性衰减</li>
                 <li><strong>LOGARITHMIC:</strong> 分值随解题人数对数衰减</li>
                 <li><strong>衰减因子:</strong> 控制衰减速度，值越小衰减越快</li>
-                <li><strong>最小分值:</strong> 分值衰减的下限</li>
-                <li><strong>首次解决奖励:</strong> 第一个解决题目的用户额外获得的分值</li>
               </ul>
             </div>
           </div>
@@ -1154,12 +1144,14 @@ import {
   generateDockerCompose,
   getComposeFile,
   deployToQuestion,
+  configureScore,
   type InputScenarioRequest,
   type InputDevicesRequest,
   type GenerateTopologyRequest,
   type TopologyImageResponse,
   type ComposeFileResponse,
   type DeployToQuestionRequest,
+  type ScoreConfigRequest,
   type DeviceZone,
   type TargetMachine
 } from '@/api/deploy'
@@ -1695,13 +1687,12 @@ const formData = ref({
   requirements: ''
 })
 
-// 分值配置
+// 分值配置 - 严格按照API接口字段
 const scoreConfig = ref({
-  baseScore: null,
-  minScore: null,
-  decayType: '',
-  decayFactor: null,
-  firstBloodBonus: null
+  max_score: 200,            // 最大分值（基础分值）
+  min_score: 50,             // 最小分值
+  decay_type: 'LINEAR',      // 衰减类型：STATIC, LINEAR, LOGARITHMIC
+  decay: 1                   // 衰减因子
 })
 
 // 新的网络配置数据结构
@@ -1865,7 +1856,8 @@ const canDeploy = computed(() => {
   return canPreviewDeploy.value &&
          questionId.value &&
          deployId.value &&
-         dockerComposeContent.value.trim() !== ''
+         dockerComposeContent.value.trim() !== '' &&
+         scoreConfig.value.decay_type.trim() !== ''
 })
 
 // 方法
@@ -2890,8 +2882,11 @@ const startDeploy = async () => {
       throw new Error(response.message || '部署失败')
     }
     
+    // 部署成功后配置分值
+    await configureScoreStep()
+    
     deployState.value = 'success'
-    ElMessage.success('部署成功！')
+    ElMessage.success('部署和分值配置成功！')
     
     // 部署成功后自动进入下一步
     setTimeout(() => {
@@ -2904,6 +2899,37 @@ const startDeploy = async () => {
     deployError.value = error.message || '部署过程中发生未知错误'
     ElMessage.error('部署失败: ' + deployError.value)
   }
+}
+
+// 配置分值
+const configureScoreStep = async () => {
+  if (!deployId.value || !questionId.value) {
+    throw new Error('缺少必要的ID信息')
+  }
+
+  // 验证分值配置数据
+  if (!scoreConfig.value.decay_type) {
+    throw new Error('请选择衰减类型')
+  }
+
+  const scoreData: ScoreConfigRequest = {
+    deploy_id: deployId.value,
+    question_id: questionId.value,
+    decay_type: scoreConfig.value.decay_type,
+    decay: scoreConfig.value.decay,
+    min_score: scoreConfig.value.min_score,
+    max_score: scoreConfig.value.max_score
+  }
+
+  console.log('配置分值，请求数据:', scoreData)
+  
+  const response = await configureScore(scoreData)
+  
+  if (response.code !== 200) {
+    throw new Error(response.message || '分值配置失败')
+  }
+  
+  console.log('分值配置成功')
 }
 
 // 拓扑相关方法
