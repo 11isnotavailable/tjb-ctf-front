@@ -5,7 +5,7 @@ import { User, MagicStick, Document, Files, ArrowRight } from '@element-plus/ico
 import { marked } from 'marked'
 import router from '@/router'
 import { getCurrentContext, getFilesFromLocal, saveAnalysisReport, type AnalysisReport } from '@/utils/localFileStore'
-import { acquireAnalyzer, addPcapFilesToAnalyzer, startAnalyze } from '@/api/analyzer'
+import { acquireAnalyzer, addPcapFilesToAnalyzer, startAnalyzePcap, addLogFilesToAnalyzer, startAnalyzeLogs } from '@/api/analyzer'
 
 // 页面状态管理
 const currentStep = ref<'setup' | 'analyzing' | 'results'>('setup')
@@ -128,7 +128,7 @@ async function analyzePcapFiles(): Promise<string> {
     await addPcapFilesToAnalyzer(analyzerId, { files: fileData.value.pcapFiles })
 
     // 开始分析
-    const analyzeResponse = await startAnalyze(analyzerId)
+    const analyzeResponse = await startAnalyzePcap(analyzerId)
     return analyzeResponse.data?.result || '分析完成，但未获取到结果'
 
   } catch (error) {
@@ -137,39 +137,27 @@ async function analyzePcapFiles(): Promise<string> {
   }
 }
 
-// 分析日志文件 (暂时stub)
+// 分析日志文件
 async function analyzeLogFiles(): Promise<string> {
   if (fileData.value.logFiles.length === 0) {
     return '# 日志分析报告\n\n**状态**: 无日志文件可供分析\n\n未检测到日志文件，跳过此项分析。'
   }
-
-  // 模拟分析耗时
-  await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000))
-
-  return `# 日志分析报告
-
-## 概述
-- **分析文件数量**: ${fileData.value.logFiles.length}
-- **分析状态**: 功能开发中
-- **深度思考**: ${enableReasoner.value ? '已启用' : '未启用'}
-
-## 文件列表
-${fileData.value.logFiles.map(file => `- \`${file}\``).join('\n')}
-
-## 分析结果
-> ⚠️ **注意**: 日志分析功能正在开发中，当前为演示版本。
-
-### 检测到的异常
-- 暂未实现具体分析逻辑
-- 请等待后续版本更新
-
-### 建议措施
-1. 加强日志监控
-2. 定期检查异常访问
-3. 升级安全防护策略
-
----
-*本报告由AI智能分析引擎生成 (开发版本)*`
+  try {
+    // 获取分析器
+    const acquireResponse = await acquireAnalyzer({ enable_reasoner: enableReasoner.value })
+    if (!acquireResponse.data?.analyzer_id) {
+      throw new Error('获取分析器失败')
+    }
+    const analyzerId = acquireResponse.data.analyzer_id
+    // 添加日志文件到分析器
+    await addLogFilesToAnalyzer(analyzerId, { files: fileData.value.logFiles })
+    // 开始日志分析
+    const analyzeResponse = await startAnalyzeLogs(analyzerId)
+    return analyzeResponse.data?.result || '分析完成，但未获取到结果'
+  } catch (error) {
+    console.error('日志分析失败:', error)
+    return '# 日志分析报告\n\n**状态**: 分析失败\n\n分析过程中出现错误，请稍后重试。'
+  }
 }
 
 // 消息轮播控制

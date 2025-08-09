@@ -28,7 +28,17 @@ export function addPcapFilesToAnalyzer(analyzer_id: string, data: AnalyzerAddFil
   return request.put<ApiResponse<string>>(`/analyzer/${analyzer_id}/files`, data)
 }
 
-export function startAnalyze(analyzer_id: string) {
+export function startAnalyzePcap(analyzer_id: string) {
   // 启动分析器并返回分析报告（Markdown）
   return request.post<ApiResponse<{ result: string }>>(`/analyzer/${analyzer_id}/analyze`)
+}
+
+export function addLogFilesToAnalyzer(analyzer_id: string, data: AnalyzerAddFilesRequest) {
+  // 把log文件id列表加入分析器
+  return request.put<ApiResponse<string>>(`/analyzer/${analyzer_id}/logs`, data)
+}
+
+export function startAnalyzeLogs(analyzer_id: string) {
+  // 启动日志分析器并返回分析报告（Markdown）
+  return request.post<ApiResponse<{ result: string }>>(`/analyzer/${analyzer_id}/analyze-logs`)
 }
