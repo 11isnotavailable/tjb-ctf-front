@@ -62,7 +62,7 @@ export function generateTopology(data: GenerateTopologyRequest) {
 // 生成拓扑图像响应数据
 export interface TopologyImageResponse {
   deploy_id: number;
-  image_data: string; // base64编码的图片数据，格式：data:image/png;base64,xxx
+  topology_url: string;
 }
 
 // 生成拓扑图像
@@ -70,26 +70,9 @@ export function generateTopologyImage(data: GenerateTopologyRequest) {
   return request.post<ApiResponse<TopologyImageResponse>>('/deploy/topology_image', data);
 }
 
-// 获取拓扑图像
-export function getTopologyImage(deployId: number) {
-  return request.get<Blob>(`/deploy/topology_image/${deployId}`, {
-    responseType: 'blob'
-  });
-}
-
-// 获取题目拓扑图像
-export function getQuestionTopologyImage(questionId: number) {
-  return request.get<Blob>(`/deploy/topology_image/question/${questionId}`, {
-    responseType: 'blob'
-  });
-}
-
 // 生成Docker Compose文件
 export function generateDockerCompose(data: GenerateTopologyRequest) {
-  // 为Docker生成设置更长的超时时间（10分钟）
-  return request.post<ApiResponse<null>>('/deploy/docker', data, {
-    timeout: 600000 // 10分钟超时
-  });
+  return request.post<ApiResponse<null>>('/deploy/docker', data);
 }
 
 // 漏洞注入
@@ -117,7 +100,10 @@ export function deployToQuestion(data: DeployToQuestionRequest) {
   return request.post<ApiResponse<null>>('/deploy/question', data);
 }
 
-
+// 获取拓扑图像URL
+export function getTopologyImageUrl(deployId: number): string {
+  return `${import.meta.env.VITE_API_BASE_URL}/deploy/topology_image/${deployId}`;
+}
 
 // compose文件响应数据
 export interface ComposeFileResponse {

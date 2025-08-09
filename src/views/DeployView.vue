@@ -897,6 +897,91 @@
             </div>
           </div>
 
+          <!-- 分值配置 -->
+          <div class="score-config-section">
+            <h4>💯 分值配置</h4>
+            <p class="section-description">配置此题目的分值策略和衰减规则</p>
+            
+            <div class="score-config-grid">
+              <!-- 基础分值 -->
+              <div class="param-group">
+                <label class="param-label">基础分值:</label>
+                <input 
+                  v-model.number="scoreConfig.baseScore" 
+                  type="number" 
+                  class="param-input"
+                  placeholder="请输入基础分值 (如: 1000)"
+                  min="0"
+                />
+              </div>
+
+              <!-- 最小分值 -->
+              <div class="param-group">
+                <label class="param-label">最小分值:</label>
+                <input 
+                  v-model.number="scoreConfig.minScore" 
+                  type="number" 
+                  class="param-input"
+                  placeholder="请输入最小分值 (如: 200)"
+                  min="0"
+                />
+              </div>
+
+              <!-- 衰减类型 -->
+              <div class="param-group">
+                <label class="param-label">衰减类型:</label>
+                <select 
+                  v-model="scoreConfig.decayType"
+                  class="param-select"
+                >
+                  <option value="">请选择衰减类型</option>
+                  <option value="STATIC">STATIC - 静态分值</option>
+                  <option value="LINEAR">LINEAR - 线性衰减</option>
+                  <option value="LOGARITHMIC">LOGARITHMIC - 对数衰减</option>
+                </select>
+              </div>
+
+              <!-- 衰减因子 -->
+              <div class="param-group">
+                <label class="param-label">衰减因子:</label>
+                <input 
+                  v-model.number="scoreConfig.decayFactor" 
+                  type="number" 
+                  class="param-input"
+                  placeholder="请输入衰减因子 (如: 0.8)"
+                  step="0.1"
+                  min="0"
+                  max="1"
+                />
+              </div>
+
+              <!-- 首次解决奖励 -->
+              <div class="param-group">
+                <label class="param-label">首次解决奖励:</label>
+                <input 
+                  v-model.number="scoreConfig.firstBloodBonus" 
+                  type="number" 
+                  class="param-input"
+                  placeholder="请输入首次解决奖励 (如: 100)"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <!-- 分值配置说明 -->
+            <div class="score-config-tips">
+              <h5>💡 配置说明</h5>
+              <ul>
+                <li><strong>STATIC:</strong> 分值不随时间变化，始终为基础分值</li>
+                <li><strong>LINEAR:</strong> 分值随解题人数线性衰减</li>
+                <li><strong>LOGARITHMIC:</strong> 分值随解题人数对数衰减</li>
+                <li><strong>衰减因子:</strong> 控制衰减速度，值越小衰减越快</li>
+                <li><strong>最小分值:</strong> 分值衰减的下限</li>
+                <li><strong>首次解决奖励:</strong> 第一个解决题目的用户额外获得的分值</li>
+              </ul>
+            </div>
+          </div>
+
           <!-- 部署操作区域 -->
           <div class="deploy-action-section">
             <!-- 准备部署状态 -->
@@ -1608,6 +1693,15 @@ const formData = ref({
   difficulty: 3,
   maxAttempts: 20,
   requirements: ''
+})
+
+// 分值配置
+const scoreConfig = ref({
+  baseScore: null,
+  minScore: null,
+  decayType: '',
+  decayFactor: null,
+  firstBloodBonus: null
 })
 
 // 新的网络配置数据结构
@@ -5386,6 +5480,78 @@ const findNodeById = (nodes, targetId) => {
   transform: translateY(-1px);
 }
 
+/* 分值配置样式 */
+.score-config-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.score-config-section h4 {
+  color: #1f2937;
+  margin-bottom: 8px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.section-description {
+  color: #6b7280;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+
+.score-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.score-config-tips {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.score-config-tips h5 {
+  color: #475569;
+  margin-bottom: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.score-config-tips ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.score-config-tips li {
+  color: #64748b;
+  margin-bottom: 8px;
+  padding-left: 16px;
+  position: relative;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.score-config-tips li::before {
+  content: '•';
+  color: #3b82f6;
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+}
+
+.score-config-tips strong {
+  color: #374151;
+  font-weight: 600;
+}
+
 /* 响应式设计 - 第六步 */
 @media (max-width: 768px) {
   .port-form {
@@ -5405,6 +5571,11 @@ const findNodeById = (nodes, targetId) => {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+  
+  .score-config-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 }
 </style>
