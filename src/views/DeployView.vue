@@ -4920,12 +4920,14 @@ const findNodeById = (nodes, targetId) => {
   font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
   font-size: 0.85rem;
   line-height: 1.5;
+  text-align: left;
 }
 
 .file-content pre {
   margin: 0;
   white-space: pre-wrap;
   word-wrap: break-word;
+  text-align: left;
 }
 
 .file-content code {
