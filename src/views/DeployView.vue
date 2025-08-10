@@ -3145,7 +3145,7 @@ const findNodeById = (nodes, targetId) => {
 .form-header {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   color: white;
-  padding: 12px 20px;
+  padding: 12px 40px;
   text-align: center;
   flex-shrink: 0;
 }
@@ -3165,7 +3165,7 @@ const findNodeById = (nodes, targetId) => {
 }
 
 .form-body {
-  padding: 12px 20px;
+  padding: 12px 40px;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -3360,7 +3360,7 @@ const findNodeById = (nodes, targetId) => {
 /* 卡片底部按钮区域 */
 .card-footer {
   border-top: 1px solid #f0f0f0;
-  padding: 20px 24px;
+  padding: 20px 40px;
   background: #fafafa;
   border-radius: 0 0 12px 12px;
   display: flex;
