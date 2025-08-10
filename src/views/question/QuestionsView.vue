@@ -11,47 +11,12 @@
           <div class="sidebar-title">训练</div>
           <ul class="sidebar-list">
             <li 
-              v-for="tag in allTags" 
-              :key="tag.tag_id"
+              v-for="tag in hardcodedTags" 
+              :key="tag.id"
               class="sidebar-item" 
-              :class="{ active: selectedTag === tag.tag }" 
-              @click="filterByTag(tag.tag)"
-            >{{ tag.tag }}</li>
-          </ul>
-        </div>
-        <div class="sidebar-section">
-          <div class="sidebar-title">赛事</div>
-          <ul class="sidebar-list">
-            <li 
-              class="sidebar-item" 
-              :class="{ active: selectedEvent === 'MoeCTF' }" 
-              @click="filterByEvent('MoeCTF')"
-            >MoeCTF 2025</li>
-            <li 
-              class="sidebar-item" 
-              :class="{ active: selectedEvent === 'Mini L-CTF' }" 
-              @click="filterByEvent('Mini L-CTF')"
-            >Mini L-CTF 2025</li>
-            <li 
-              class="sidebar-item" 
-              :class="{ active: selectedEvent === 'TGCTF' }" 
-              @click="filterByEvent('TGCTF')"
-            >TGCTF 2025</li>
-            <li 
-              class="sidebar-item" 
-              :class="{ active: selectedEvent === 'NPC²CTF' }" 
-              @click="filterByEvent('NPC²CTF')"
-            >NPC²CTF 2025</li>
-            <li 
-              class="sidebar-item" 
-              :class="{ active: selectedEvent === 'NewYear CTF' }" 
-              @click="filterByEvent('NewYear CTF')"
-            >NewYear CTF 2025</li>
-            <li 
-              class="sidebar-item" 
-              :class="{ active: selectedEvent === 'NewStar CTF' }" 
-              @click="filterByEvent('NewStar CTF')"
-            >NewStar CTF 2024</li>
+              :class="{ active: selectedTag === tag.name }" 
+              @click="filterByTag(tag.name)"
+            >{{ tag.name }}</li>
           </ul>
         </div>
       </aside>
@@ -71,7 +36,7 @@
           <el-button 
             type="primary" 
             plain 
-            :class="{ 'active-filter': !selectedTag && !selectedEvent }" 
+            :class="{ 'active-filter': !selectedTag }" 
             @click="clearFilters"
           >
             全部题目
@@ -138,7 +103,7 @@ import { ref, onMounted, watch } from 'vue';
 import MatrixRainCanvas from '@/components/effects/MatrixRainCanvas.vue';
 import { useThemeStore } from '@/stores/theme';
 import { getQuestionList, QuestionItem } from '@/api/question';
-import { getAllTags, Tag } from '@/api/tag';
+
 import { useRouter } from 'vue-router';
 import request from '@/utils/request';
 import { ElMessage } from 'element-plus';
@@ -157,13 +122,17 @@ const page = ref(1);
 const pageSize = ref(10);
 const loading = ref(false);
 
-// 标签数据
-const allTags = ref<Tag[]>([]);
-const tagMap = ref<Map<number, string>>(new Map()); // tag_id -> tag_name 的映射
+// 硬编码的标签数据
+const hardcodedTags = ref([
+  { id: 1, name: '电子数据取证' },
+  { id: 2, name: '渗透测试' },
+  { id: 3, name: '系统安全' },
+  { id: 4, name: '密码技术与应用' },
+  { id: 5, name: '恶意软件分析' }
+]);
 
 // 筛选
 const selectedTag = ref('');
-const selectedEvent = ref('');
 const searchKeyword = ref('');
 const difficulty = ref();
 
@@ -178,19 +147,7 @@ const cleanQuestionData = (questions: QuestionItem[]): QuestionItem[] => {
   }));
 };
 
-// 获取所有标签数据
-const fetchAllTags = async () => {
-  try {
-    const response = await getAllTags();
-    if (response?.code === 200 && response.data) {
-      allTags.value = response.data;
-      // 建立 tag_id -> tag_name 的映射
-      tagMap.value = new Map(response.data.map(tag => [tag.tag_id, tag.tag]));
-    }
-  } catch (error) {
-    console.error('获取标签列表失败:', error);
-  }
-};
+
 
 // 获取所有题目数据
 const fetchAllQuestions = async () => {
@@ -238,23 +195,14 @@ const applyFiltersAndPagination = () => {
     filteredQuestions = filteredQuestions.filter(q => q.star === difficulty.value);
   }
 
-  // 按标签筛选 (根据tag_id进行筛选)
+  // 按标签筛选 (根据硬编码的标签名称进行筛选)
   if (selectedTag.value) {
-    // 找到选中标签对应的tag_id
-    const selectedTagId = [...tagMap.value.entries()]
-      .find(([id, name]) => name === selectedTag.value)?.[0];
+    // 找到选中标签对应的id
+    const selectedTagObj = hardcodedTags.value.find(tag => tag.name === selectedTag.value);
     
-    if (selectedTagId) {
-      filteredQuestions = filteredQuestions.filter(q => q.tag_id === selectedTagId);
+    if (selectedTagObj) {
+      filteredQuestions = filteredQuestions.filter(q => q.tag_id === selectedTagObj.id);
     }
-  }
-
-  // 按赛事筛选 (这里可以根据实际需求添加赛事字段)
-  if (selectedEvent.value) {
-    filteredQuestions = filteredQuestions.filter(q => 
-      q.title.toLowerCase().includes(selectedEvent.value.toLowerCase()) ||
-      q.introduction.toLowerCase().includes(selectedEvent.value.toLowerCase())
-    );
   }
 
   // 计算总数
@@ -273,20 +221,6 @@ const filterByTag = (tag: string) => {
     selectedTag.value = '';
   } else {
     selectedTag.value = tag;
-    selectedEvent.value = ''; // 清除赛事筛选
-  }
-  page.value = 1; // 重置分页
-  applyFiltersAndPagination();
-};
-
-// 按赛事筛选
-const filterByEvent = (event: string) => {
-  if (selectedEvent.value === event) {
-    // 取消选中
-    selectedEvent.value = '';
-  } else {
-    selectedEvent.value = event;
-    selectedTag.value = ''; // 清除标签筛选
   }
   page.value = 1; // 重置分页
   applyFiltersAndPagination();
@@ -295,7 +229,6 @@ const filterByEvent = (event: string) => {
 // 清除所有筛选条件
 const clearFilters = () => {
   selectedTag.value = '';
-  selectedEvent.value = '';
   difficulty.value = undefined;
   searchKeyword.value = '';
   page.value = 1;
@@ -333,10 +266,9 @@ const gotoDetail = (id: number) => {
 
 // 监听URL参数变化
 watch(() => router.currentRoute.value.query, (query) => {
-  const { tag, event, keyword, star, page: pageQuery, pageSize: pageSizeQuery } = query;
+  const { tag, keyword, star, page: pageQuery, pageSize: pageSizeQuery } = query;
   
   if (tag) selectedTag.value = tag as string;
-  if (event) selectedEvent.value = event as string;
   if (keyword) searchKeyword.value = keyword as string;
   if (star) difficulty.value = parseInt(star as string);
   if (pageQuery) page.value = parseInt(pageQuery as string);
@@ -350,7 +282,6 @@ watch(() => router.currentRoute.value.query, (query) => {
 }, { immediate: true });
 
 onMounted(async () => {
-  await fetchAllTags();
   await fetchAllQuestions();
 });
 </script>
