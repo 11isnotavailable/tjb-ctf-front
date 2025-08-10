@@ -50,9 +50,6 @@
           </div>
         </div>
         <div class="action-area">
-          <el-icon>
-            <Search />
-          </el-icon>
           <ThemeSwitcher />
           <template v-if="userStore.isAuthenticated">
             <UserAvatar />
@@ -79,7 +76,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { HomeFilled, Search, DataLine, List, Monitor, Trophy } from '@element-plus/icons-vue'
+import { HomeFilled, DataLine, List, Monitor, Trophy } from '@element-plus/icons-vue'
 import CrossSwords from '@/assets/icons/CrossSwords.vue'
 import Shield from '@/assets/icons/Shield.vue'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'

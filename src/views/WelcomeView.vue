@@ -38,7 +38,6 @@
 
         <!-- 右侧操作区 -->
         <div class="action-area">
-          <el-icon><Search /></el-icon>
           <ThemeSwitcher />
 
           <!-- 根据登录状态显示不同的元素 -->
@@ -99,7 +98,6 @@ import { useRouter } from 'vue-router';
 import { computed, ref, watch, nextTick } from 'vue';
 import {
   HomeFilled,
-  Search,
   DataLine,
   List,
   Monitor,
