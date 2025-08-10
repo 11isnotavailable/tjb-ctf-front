@@ -7,7 +7,7 @@
       :speed="matrixSpeed"
       :density="matrixDensity"
     />
-    
+
     <!-- 过渡动画层 -->
     <TransitionRainOverlay
       :active="transitionActive"
@@ -17,14 +17,14 @@
       :density="1"
       @transition-complete="handleTransitionComplete"
     />
-    
+
     <!-- 顶部导航栏 -->
     <header class="header">
       <div class="header-content">
         <div class="brand">
-          <div class="brand-logo">TJB-CTF</div>
+          <div class="brand-logo">挑战杯-CTF</div>
         </div>
-        
+
         <!-- 导航菜单 - 改为左对齐而非居中 -->
         <div class="nav-section">
           <div class="nav-item" @click="goToHome"><el-icon><HomeFilled /></el-icon><span>首页</span></div>
@@ -35,12 +35,12 @@
           <div class="nav-item"><CrossSwords class="custom-icon" /><span>一键攻击</span></div>
           <div class="nav-item"><Shield class="custom-icon" /><span>智能防御</span></div>
         </div>
-        
+
         <!-- 右侧操作区 -->
         <div class="action-area">
           <el-icon><Search /></el-icon>
           <ThemeSwitcher />
-          
+
           <!-- 根据登录状态显示不同的元素 -->
           <template v-if="userStore.isAuthenticated">
             <UserAvatar />
@@ -51,25 +51,25 @@
         </div>
       </div>
     </header>
-    
+
     <!-- 主内容区 -->
     <main class="main-content">
       <div class="hero-section">
         <!-- 标题使用打字机效果，使用key属性确保主题切换时重新渲染 -->
-        <TypewriterText 
+        <TypewriterText
           :key="'typewriter-' + currentTheme"
           text="▶通过实战演练提升网络安全技能"
-          :speed="80" 
-          tag="h1" 
-          class="main-title" 
+          :speed="80"
+          tag="h1"
+          class="main-title"
           @typing-complete="titleTypingComplete"
         />
-        
+
         <!-- 副标题在打字机效果完成后显示 -->
         <transition name="fade">
           <p v-if="showSubtitle" class="subtitle">加入我们的CTF平台，挑战各种网络安全难题</p>
         </transition>
-        
+
         <!-- 按钮在副标题显示后显示 -->
         <transition name="fade">
           <div v-if="showButtons" class="hero-actions mt-5">
@@ -79,7 +79,7 @@
         </transition>
       </div>
     </main>
-    
+
     <!-- 页脚 -->
     <footer class="footer">
       <div class="footer-content">
@@ -149,7 +149,7 @@ const titleTypingComplete = () => {
   // 标题打字效果完成后，显示副标题
   setTimeout(() => {
     showSubtitle.value = true;
-    
+
     // 副标题显示后，再显示按钮
     setTimeout(() => {
       showButtons.value = true;
@@ -161,10 +161,10 @@ const titleTypingComplete = () => {
 const goToLogin = (route = '/login') => {
   // 存储目标路由
   targetRoute.value = route;
-  
+
   // 激活过渡动画
   transitionActive.value = true;
-  
+
   // 确保路由被记录
   console.log('目标路由:', targetRoute.value);
 };
@@ -173,7 +173,7 @@ const goToLogin = (route = '/login') => {
 const handleTransitionComplete = () => {
   // 重置动画状态
   transitionActive.value = false;
-  
+
   // 导航到目标路由
   if (targetRoute.value) {
     console.log('跳转到:', targetRoute.value);
@@ -454,4 +454,3 @@ const handleStartChallenge = () => {
   opacity: 0;
 }
 </style>
- 

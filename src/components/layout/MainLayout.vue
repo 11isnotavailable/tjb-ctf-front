@@ -3,7 +3,7 @@
     <header class="header">
       <div class="header-content">
         <div class="brand">
-          <div class="brand-logo">TJB-CTF</div>
+          <div class="brand-logo">挑战杯-CTF</div>
         </div>
         <div class="nav-section">
           <div class="nav-item" @click="goToHome">
@@ -70,7 +70,7 @@
     </main>
     <footer class="footer">
       <div class="footer-content">
-        <span>&copy; {{ currentYear }} TJB-CTF 版权所有</span>
+        <span>&copy; {{ currentYear }} 挑战杯-CTF 版权所有</span>
       </div>
     </footer>
   </div>

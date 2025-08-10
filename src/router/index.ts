@@ -116,7 +116,7 @@ const router = createRouter({
 
 // 动态设置页面标题
 router.afterEach((to) => {
-  const title = to.meta.title ? `${to.meta.title} - TJB-CTF` : 'TJB-CTF'
+  const title = to.meta.title ? `${to.meta.title} - 挑战杯-CTF` : '挑战杯-CTF'
   document.title = title
 })
 

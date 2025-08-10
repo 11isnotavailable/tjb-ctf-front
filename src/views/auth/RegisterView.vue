@@ -2,75 +2,75 @@
   <div class="register-page" :class="{'dark-theme': isDarkTheme, 'light-theme': !isDarkTheme}">
     <!-- Silk画布背景效果 -->
     <SilkCanvas />
-    
+
     <div class="register-container">
       <div class="register-form">
         <!-- 打字机效果的标题 -->
-        <TypewriterText 
+        <TypewriterText
           :key="'register-' + currentTheme"
-          text="▶ TJB-CTF平台注册"
-          :speed="80" 
-          tag="h2" 
-          class="title" 
+          text="▶ 挑战杯-CTF平台注册"
+          :speed="80"
+          tag="h2"
+          class="title"
         />
-        
+
         <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleSubmit">
           <el-form-item prop="email">
-            <el-input 
-              v-model="form.email" 
-              placeholder="邮箱" 
+            <el-input
+              v-model="form.email"
+              placeholder="邮箱"
               prefix-icon="Message"
               autocomplete="email"
             />
           </el-form-item>
-          
+
           <el-form-item prop="password">
-            <el-input 
-              v-model="form.password" 
-              type="password" 
-              placeholder="密码" 
+            <el-input
+              v-model="form.password"
+              type="password"
+              placeholder="密码"
               prefix-icon="Lock"
               autocomplete="new-password"
               show-password
             />
           </el-form-item>
-          
+
           <el-form-item prop="confirmPassword">
-            <el-input 
-              v-model="form.confirmPassword" 
-              type="password" 
-              placeholder="确认密码" 
+            <el-input
+              v-model="form.confirmPassword"
+              type="password"
+              placeholder="确认密码"
               prefix-icon="Lock"
               autocomplete="new-password"
               show-password
             />
           </el-form-item>
-          
+
           <el-form-item prop="verification_code">
             <div class="verification-code-container">
-              <el-input 
-                v-model="form.verification_code" 
-                placeholder="验证码" 
+              <el-input
+                v-model="form.verification_code"
+                placeholder="验证码"
                 prefix-icon="Key"
                 type="number"
                 maxlength="6"
               />
-              <el-button 
-                :disabled="cooldown > 0" 
-                @click="handleSendVerificationCode" 
+              <el-button
+                :disabled="cooldown > 0"
+                @click="handleSendVerificationCode"
                 class="verification-code-btn"
               >
                 {{ cooldown > 0 ? `${cooldown}秒后重试` : '发送验证码' }}
               </el-button>
             </div>
           </el-form-item>
-          
+
           <el-form-item>
             <el-button type="primary" native-type="submit" :loading="loading" class="submit-btn">
               注册
             </el-button>
           </el-form-item>
-          
+
           <div class="form-footer">
             <span>已有账号？</span>
             <router-link to="/login">立即登录</router-link>
@@ -82,7 +82,7 @@
       <div class="theme-switch-container">
         <ThemeSwitcher />
       </div>
-      
+
       <!-- 返回首页 -->
       <div class="back-home">
         <el-button plain size="small" @click="goBackToHome">
@@ -161,7 +161,7 @@ const handleSendVerificationCode = async () => {
     ElMessage.warning('请先输入邮箱');
     return;
   }
-  
+
   try {
     const result = await userStore.sendVerificationCodeAction(form.email);
     if (result) {
@@ -176,11 +176,11 @@ const handleSendVerificationCode = async () => {
 // 开始冷却计时器
 const startCooldown = (seconds: number) => {
   cooldown.value = seconds;
-  
+
   if (cooldownTimer) {
     clearInterval(cooldownTimer);
   }
-  
+
   cooldownTimer = setInterval(() => {
     cooldown.value--;
     if (cooldown.value <= 0) {
@@ -193,27 +193,27 @@ const startCooldown = (seconds: number) => {
 // 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return;
-  
+
   try {
     loading.value = true;
     await formRef.value.validate();
-    
+
     const { email, password, verification_code } = form;
     // 确保验证码为整数
     const intVerificationCode = parseInt(verification_code);
-    
+
     if (isNaN(intVerificationCode)) {
       ElMessage.error('验证码必须为数字');
       loading.value = false;
       return;
     }
-    
-    const success = await userStore.registerAction({ 
-      email, 
-      password, 
-      verification_code: intVerificationCode 
+
+    const success = await userStore.registerAction({
+      email,
+      password,
+      verification_code: intVerificationCode
     });
-    
+
     if (success) {
       ElMessage.success('注册成功');
       router.push('/login');
@@ -303,7 +303,7 @@ onUnmounted(() => {
 .dark-theme .register-form {
   background-color: rgba(0, 0, 0, 0.7);
   border: 1px solid rgba(74, 220, 74, 0.6);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15),
               0 0 10px rgba(74, 220, 74, 0.3),
               0 0 30px rgba(74, 220, 74, 0.2);
 }
@@ -311,7 +311,7 @@ onUnmounted(() => {
 .light-theme .register-form {
   background-color: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(10, 132, 255, 0.6);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1),
               0 0 10px rgba(10, 132, 255, 0.2),
               0 0 30px rgba(10, 132, 255, 0.1);
 }
@@ -329,13 +329,13 @@ onUnmounted(() => {
 }
 
 .dark-theme .register-form::before {
-  background-image: 
+  background-image:
     repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(74, 220, 74, 0.07) 19px, rgba(74, 220, 74, 0.07) 20px),
     repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(74, 220, 74, 0.07) 19px, rgba(74, 220, 74, 0.07) 20px);
 }
 
 .light-theme .register-form::before {
-  background-image: 
+  background-image:
     repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(10, 132, 255, 0.07) 19px, rgba(10, 132, 255, 0.07) 20px),
     repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(10, 132, 255, 0.07) 19px, rgba(10, 132, 255, 0.07) 20px);
 }
@@ -418,4 +418,4 @@ onUnmounted(() => {
 .mr-1 {
   margin-right: 5px;
 }
-</style> 
+</style>
