@@ -22,7 +22,7 @@
     <header class="header">
       <div class="header-content">
         <div class="brand">
-          <div class="brand-logo">天眼-CTF</div>
+          <TianYanLogo :show-text="true" size="medium" />
         </div>
 
         <!-- 导航菜单 - 改为左对齐而非居中 -->
@@ -32,8 +32,8 @@
           <div class="nav-item" @click="goToQuestions"><el-icon><List /></el-icon><span>题目</span></div>
           <div class="nav-item" @click="goToLeaderboard"><el-icon><Trophy /></el-icon><span>排行榜</span></div>
           <div class="nav-item" @click="goToDeploy"><el-icon><Monitor /></el-icon><span>部署</span></div>
-          <div class="nav-item"><CrossSwords class="custom-icon" /><span>一键攻击</span></div>
-          <div class="nav-item"><Shield class="custom-icon" /><span>智能防御</span></div>
+          <div class="nav-item" @click="goToAttack"><CrossSwords class="custom-icon" /><span>一键攻击</span></div>
+          <div class="nav-item" @click="goToDefense"><Shield class="custom-icon" /><span>智能防御</span></div>
         </div>
 
         <!-- 右侧操作区 -->
@@ -115,6 +115,7 @@ import TransitionRainOverlay from '@/components/effects/TransitionRainOverlay.vu
 import { useThemeStore } from '@/stores/theme';
 import { useUserStore } from '@/stores/user'; // 导入用户存储
 import UserAvatar from '@/components/UserAvatar.vue'; // 导入用户头像组件
+import TianYanLogo from '@/components/TianYanLogo.vue'; // 导入天眼Logo组件
 
 const router = useRouter();
 const themeStore = useThemeStore();
@@ -198,6 +199,14 @@ const goToLeaderboard = () => {
   router.push('/home/leaderboard');
 };
 
+const goToAttack = () => {
+  router.push('/home/attack');
+};
+
+const goToDefense = () => {
+  router.push('/home/defend/capture');
+};
+
 // 在组件挂载时加载保存的主题
 themeStore.loadSavedTheme();
 
@@ -242,25 +251,7 @@ const handleStartChallenge = () => {
   flex-shrink: 0; /* 防止品牌区域被压缩 */
 }
 
-.brand-logo {
-  font-size: 24px;
-  font-weight: bold;
-  color: #409EFF;
-  letter-spacing: 2px;
-  font-family: 'Segoe UI', 'Arial', 'Helvetica Neue', sans-serif;
-  text-align: center;
-  line-height: 32px;
-}
-
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  margin-right: 10px;
-}
-
-.brand-text {
-  /* 修改为水平文本样式 */
-  font-size: 16px;
+/* Logo组件样式已移至TianYanLogo组件中 */
   font-weight: 500;
   color: var(--color-text);
   letter-spacing: 1px; /* 增加字间距 */
