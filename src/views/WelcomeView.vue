@@ -252,12 +252,6 @@ const handleStartChallenge = () => {
 }
 
 /* Logo组件样式已移至TianYanLogo组件中 */
-  font-weight: 500;
-  color: var(--color-text);
-  letter-spacing: 1px; /* 增加字间距 */
-  white-space: nowrap; /* 防止文本换行 */
-  padding: 5px 0; /* 确保有足够的上下内边距 */
-}
 
 /* 导航菜单 - 改为左对齐而非居中 */
 .nav-section {
