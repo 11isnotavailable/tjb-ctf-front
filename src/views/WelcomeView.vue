@@ -22,7 +22,7 @@
     <header class="header">
       <div class="header-content">
         <div class="brand">
-          <div class="brand-logo">挑战杯-CTF</div>
+          <div class="brand-logo">天眼-CTF</div>
         </div>
 
         <!-- 导航菜单 - 改为左对齐而非居中 -->
@@ -82,7 +82,7 @@
     <!-- 页脚 -->
     <footer class="footer">
       <div class="footer-content">
-        <span>© 2023 CTF平台 版权所有</span>
+        <span>© 2024 天眼-CTF 版权所有</span>
         <div class="footer-icons">
           <el-icon><ChatDotRound /></el-icon>
           <el-icon><Service /></el-icon>

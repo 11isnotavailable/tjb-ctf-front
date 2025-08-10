@@ -8,8 +8,8 @@
           class="shield-border"
           points="60,10 85,25 95,50 85,75 60,90 35,75 25,50 35,25"
           fill="none"
-          stroke="currentColor"
-          stroke-width="2"
+          stroke="var(--tianyan-primary)"
+          stroke-width="6"
         />
         
         <!-- 扫描环圈 -->
