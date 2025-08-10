@@ -1018,9 +1018,6 @@
           </div>
 
           <div class="action-buttons">
-            <button class="action-btn primary-btn" @click="viewDeployment">
-              👁️ 查看部署详情
-            </button>
             <button class="action-btn secondary-btn" @click="createNew">
               🆕 创建新题目
             </button>
@@ -2652,14 +2649,6 @@ const regenerateDocker = () => {
 }
 
 // 第六步相关方法
-const viewDeployment = () => {
-  // 查看部署详情的逻辑
-  console.log('查看部署详情')
-  ElMessage.info('部署详情功能将在后续版本中实现')
-
-  // 这里可以跳转到部署详情页面或打开详情弹窗
-  // 例如：router.push(`/deployments/${deployId.value}`)
-}
 
 const createNew = () => {
   // 创建新题目的逻辑
