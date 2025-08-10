@@ -8,7 +8,7 @@
         <!-- 打字机效果的标题 -->
         <TypewriterText
           :key="'login-' + currentTheme"
-          text="▶ 挑战杯-CTF平台登录"
+          text="▶ 天眼-CTF平台登录"
           :speed="80"
           tag="h2"
           class="title"
