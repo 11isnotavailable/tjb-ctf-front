@@ -3,7 +3,7 @@
     <header class="header">
       <div class="header-content">
         <div class="brand">
-          <div class="brand-logo">挑战杯-CTF</div>
+          <TianYanLogo :show-text="true" size="medium" />
         </div>
         <div class="nav-section">
           <div class="nav-item" @click="goToHome">
@@ -67,7 +67,7 @@
     </main>
     <footer class="footer">
       <div class="footer-content">
-        <span>&copy; {{ currentYear }} 挑战杯-CTF 版权所有</span>
+        <span>&copy; {{ currentYear }} 天眼-CTF 版权所有</span>
       </div>
     </footer>
   </div>
@@ -81,6 +81,7 @@ import CrossSwords from '@/assets/icons/CrossSwords.vue'
 import Shield from '@/assets/icons/Shield.vue'
 import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import TianYanLogo from '@/components/TianYanLogo.vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -140,15 +141,7 @@ const goToAttack = () => {
   flex-shrink: 0;
 }
 
-.brand-logo {
-  font-size: 24px;
-  font-weight: bold;
-  color: #409eff;
-  letter-spacing: 2px;
-  font-family: 'Segoe UI', 'Arial', 'Helvetica Neue', sans-serif;
-  text-align: center;
-  line-height: 32px;
-}
+/* Logo样式已移至TianYanLogo组件 */
 
 .nav-section {
   display: flex;
