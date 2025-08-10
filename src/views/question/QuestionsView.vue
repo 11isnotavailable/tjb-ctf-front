@@ -11,35 +11,12 @@
           <div class="sidebar-title">训练</div>
           <ul class="sidebar-list">
             <li 
+              v-for="tag in allTags" 
+              :key="tag.tag_id"
               class="sidebar-item" 
-              :class="{ active: selectedTag === 'Web' }" 
-              @click="filterByTag('Web')"
-            >Web | 网络攻防</li>
-            <li 
-              class="sidebar-item" 
-              :class="{ active: selectedTag === 'Crypto' }" 
-              @click="filterByTag('Crypto')"
-            >Crypto | 密码学</li>
-            <li 
-              class="sidebar-item" 
-              :class="{ active: selectedTag === 'Reverse' }" 
-              @click="filterByTag('Reverse')"
-            >Reverse | 逆向工程</li>
-            <li 
-              class="sidebar-item" 
-              :class="{ active: selectedTag === 'Pwn' }" 
-              @click="filterByTag('Pwn')"
-            >Pwn | 二进制安全</li>
-            <li 
-              class="sidebar-item" 
-              :class="{ active: selectedTag === 'AWD' }" 
-              @click="filterByTag('AWD')"
-            >AWD | 攻防模式</li>
-            <li 
-              class="sidebar-item" 
-              :class="{ active: selectedTag === 'AI' }" 
-              @click="filterByTag('AI')"
-            >AI | 人工智能安全</li>
+              :class="{ active: selectedTag === tag.tag }" 
+              @click="filterByTag(tag.tag)"
+            >{{ tag.tag }}</li>
           </ul>
         </div>
         <div class="sidebar-section">
@@ -161,6 +138,7 @@ import { ref, onMounted, watch } from 'vue';
 import MatrixRainCanvas from '@/components/effects/MatrixRainCanvas.vue';
 import { useThemeStore } from '@/stores/theme';
 import { getQuestionList, QuestionItem } from '@/api/question';
+import { getAllTags, Tag } from '@/api/tag';
 import { useRouter } from 'vue-router';
 import request from '@/utils/request';
 import { ElMessage } from 'element-plus';
@@ -179,6 +157,10 @@ const page = ref(1);
 const pageSize = ref(10);
 const loading = ref(false);
 
+// 标签数据
+const allTags = ref<Tag[]>([]);
+const tagMap = ref<Map<number, string>>(new Map()); // tag_id -> tag_name 的映射
+
 // 筛选
 const selectedTag = ref('');
 const selectedEvent = ref('');
@@ -194,6 +176,20 @@ const cleanQuestionData = (questions: QuestionItem[]): QuestionItem[] => {
     // 如果topology是字符串，转换为null或空对象
     topology: typeof question.topology === 'string' ? null : question.topology
   }));
+};
+
+// 获取所有标签数据
+const fetchAllTags = async () => {
+  try {
+    const response = await getAllTags();
+    if (response?.code === 200 && response.data) {
+      allTags.value = response.data;
+      // 建立 tag_id -> tag_name 的映射
+      tagMap.value = new Map(response.data.map(tag => [tag.tag_id, tag.tag]));
+    }
+  } catch (error) {
+    console.error('获取标签列表失败:', error);
+  }
 };
 
 // 获取所有题目数据
@@ -242,13 +238,15 @@ const applyFiltersAndPagination = () => {
     filteredQuestions = filteredQuestions.filter(q => q.star === difficulty.value);
   }
 
-  // 按标签筛选 (这里可以根据实际需求添加标签字段)
+  // 按标签筛选 (根据tag_id进行筛选)
   if (selectedTag.value) {
-    // 假设题目标题或介绍中包含标签信息
-    filteredQuestions = filteredQuestions.filter(q => 
-      q.title.toLowerCase().includes(selectedTag.value.toLowerCase()) ||
-      q.introduction.toLowerCase().includes(selectedTag.value.toLowerCase())
-    );
+    // 找到选中标签对应的tag_id
+    const selectedTagId = [...tagMap.value.entries()]
+      .find(([id, name]) => name === selectedTag.value)?.[0];
+    
+    if (selectedTagId) {
+      filteredQuestions = filteredQuestions.filter(q => q.tag_id === selectedTagId);
+    }
   }
 
   // 按赛事筛选 (这里可以根据实际需求添加赛事字段)
@@ -351,7 +349,10 @@ watch(() => router.currentRoute.value.query, (query) => {
   }
 }, { immediate: true });
 
-onMounted(fetchAllQuestions);
+onMounted(async () => {
+  await fetchAllTags();
+  await fetchAllQuestions();
+});
 </script>
 
 <style scoped>
