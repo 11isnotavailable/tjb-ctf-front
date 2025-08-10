@@ -589,8 +589,8 @@ const startEnvironment = async () => {
 
 // 格式化访问URL
 const formatAccessUrl = (address: string) => {
-  // 硬编码IP地址
-  const HARDCODED_IP = 'http://81.70.202.254';
+  // 硬编码IP地址（不包含协议）
+  const HARDCODED_IP = '81.70.202.254';
 
   // 如果地址已经包含协议，提取端口号并替换IP
   if (address.startsWith('http://') || address.startsWith('https://')) {
