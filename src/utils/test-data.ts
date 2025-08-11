@@ -22,7 +22,7 @@ export const mockQuestionDetail = {
     direction: "LR"
   },
   valid_time: 3600,
-  create_time: "2024-01-15T10:30:00",
+  create_time: "2025-01-15T10:30:00",
   star: 3,
   try_number: 156,
   solved_number: 89
@@ -32,7 +32,7 @@ export const mockContainerInfo = {
   docker_id: 1001,
   access: "http://ctf-web-1001.example.com",
   status: "RUNNING" as const,
-  create_time: "2024-01-15T14:20:00",
+  create_time: "2025-01-15T14:20:00",
   timeout: 3600,
   refresh_count: 0,
   type: "DYNAMIC" as const,
@@ -50,7 +50,7 @@ export const mockSubmitRecords = [
     ip: "192.168.1.100",
     provided: "flag{sql_injection_master}",
     correction: true,
-    create_time: "2024-01-15T15:30:00",
+    create_time: "2025-01-15T15:30:00",
     rank: 12
   },
   {
@@ -61,7 +61,7 @@ export const mockSubmitRecords = [
     ip: "192.168.1.100",
     provided: "flag{wrong_answer}",
     correction: false,
-    create_time: "2024-01-15T15:25:00"
+    create_time: "2025-01-15T15:25:00"
   },
   {
     record_id: 3,
@@ -71,7 +71,7 @@ export const mockSubmitRecords = [
     ip: "192.168.1.100",
     provided: "flag{test_flag}",
     correction: false,
-    create_time: "2024-01-15T15:20:00"
+    create_time: "2025-01-15T15:20:00"
   }
 ];
 

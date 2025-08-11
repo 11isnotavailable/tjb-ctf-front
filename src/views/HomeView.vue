@@ -8,7 +8,7 @@ const router = useRouter();
 <template>
   <div class="home-container">
     <div class="welcome-banner">
-      <h1>欢迎来到 天眼-CTF 平台</h1>
+      <h1>欢迎来到 天演-CTF 平台</h1>
       <p class="platform-description">一个动态生成的安全训练环境，结合AI与自动化攻防技术</p>
 
       <div class="action-buttons">

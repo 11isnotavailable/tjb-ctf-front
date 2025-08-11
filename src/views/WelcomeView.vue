@@ -82,7 +82,7 @@
     <!-- 页脚 -->
     <footer class="footer">
       <div class="footer-content">
-        <span>© 2024 天眼-CTF 版权所有</span>
+        <span>© 2025 天演-CTF 版权所有</span>
         <div class="footer-icons">
           <el-icon><ChatDotRound /></el-icon>
           <el-icon><Service /></el-icon>
@@ -115,7 +115,7 @@ import TransitionRainOverlay from '@/components/effects/TransitionRainOverlay.vu
 import { useThemeStore } from '@/stores/theme';
 import { useUserStore } from '@/stores/user'; // 导入用户存储
 import UserAvatar from '@/components/UserAvatar.vue'; // 导入用户头像组件
-import TianYanLogo from '@/components/TianYanLogo.vue'; // 导入天眼Logo组件
+import TianYanLogo from '@/components/TianYanLogo.vue'; // 导入天演Logo组件
 
 const router = useRouter();
 const themeStore = useThemeStore();

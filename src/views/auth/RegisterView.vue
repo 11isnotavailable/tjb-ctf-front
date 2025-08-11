@@ -8,7 +8,7 @@
         <!-- 打字机效果的标题 -->
         <TypewriterText
           :key="'register-' + currentTheme"
-          text="▶ 天眼-CTF平台注册"
+          text="▶ 天演-CTF平台注册"
           :speed="80"
           tag="h2"
           class="title"

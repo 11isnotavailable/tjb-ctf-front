@@ -1,6 +1,6 @@
 <template>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-    <!-- 简化的天眼图标，适用于小尺寸 -->
+    <!-- 简化的天演图标，适用于小尺寸 -->
     
     <!-- 外圈 -->
     <polygon 
@@ -10,7 +10,7 @@
       stroke-width="1.5"
     />
     
-    <!-- 天眼主体 -->
+    <!-- 天演主体 -->
     <ellipse 
       cx="16" 
       cy="16" 

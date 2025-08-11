@@ -67,7 +67,7 @@
     </main>
     <footer class="footer">
       <div class="footer-content">
-        <span>&copy; {{ currentYear }} 天眼-CTF 版权所有</span>
+        <span>&copy; {{ currentYear }} 天演-CTF 版权所有</span>
       </div>
     </footer>
   </div>

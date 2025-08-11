@@ -1,7 +1,7 @@
 <template>
   <div class="tianyan-logo" :class="{ 'tianyan-logo--dark': isDark }">
     <div class="logo-container">
-      <!-- 天眼图标 -->
+      <!-- 天演图标 -->
       <svg class="logo-icon" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
         <!-- 外圈防护盾 -->
         <polygon 
@@ -24,7 +24,7 @@
           opacity="0.6"
         />
         
-        <!-- 天眼主体 -->
+        <!-- 天演主体 -->
         <ellipse 
           class="eye-shape"
           cx="60" 
@@ -63,7 +63,7 @@
       
       <!-- 文字标识 -->
       <div class="logo-text" v-if="showText">
-        <span class="brand-name">天眼</span>
+        <span class="brand-name">天演</span>
         <span class="brand-suffix">CTF</span>
       </div>
     </div>
@@ -90,7 +90,7 @@ const isDark = computed(() => themeStore.currentTheme === 'dark');
 
 <style scoped>
 .tianyan-logo {
-  /* 天眼专属CSS变量 */
+  /* 天演专属CSS变量 */
   --tianyan-primary: #00bcd4;
   --tianyan-accent: #1a237e;
   --tianyan-success: #4caf50;
