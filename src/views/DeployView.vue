@@ -1256,7 +1256,7 @@ const DeviceConfigDialog = defineComponent({
 
     // 镜像选项（严格按照图2格式）
     const imageOptions = {
-      'apache+php': ['apache:php'],
+      'apache+php': ['php:apache'],
       'apache+python': ['apache:python'],
       'apache+java': ['apache:java'],
       'mysql': ['mysql:latest'],
@@ -1433,7 +1433,7 @@ const NodeConfigDialog = defineComponent({
     const nodeType = ref('Web服务器')
     const system = ref('apache+php')
     const ip = ref('')
-    const image = ref('apache:php')
+    const image = ref('php:apache')
 
     const nodeTypeOptions = [
       'Web服务器',
@@ -1452,7 +1452,7 @@ const NodeConfigDialog = defineComponent({
     }
 
     const imageOptions = {
-      'apache+php': ['apache:php'],
+      'apache+php': ['php:apache'],
       'apache+python': ['apache:python'],
       'apache+java': ['apache:java'],
       'mysql': ['mysql:latest'],
@@ -1500,7 +1500,7 @@ const NodeConfigDialog = defineComponent({
       nodeType.value = 'Web服务器'
       system.value = 'apache+php'
       ip.value = ''
-      image.value = 'apache:php'
+      image.value = 'php:apache'
     }
 
     // 当节点类型改变时，自动更新系统选项
@@ -2394,7 +2394,7 @@ const convertTopologyToDevices = (): DeviceZone[] => {
           machine_type: device.type || 'Web服务器',
           system: device.system || 'apache+php',
           ip_address: device.ip || '自动分配',
-          image: device.image || 'apache:php'
+          image: device.image || 'php:apache'
         }
         targetMachines.push(machine)
       })
@@ -2429,7 +2429,7 @@ const convertZoneToDevices = (nodes: any[], zone: string, defaultSubnet: string)
           machine_type: node.nodeType || 'Web服务器',
           system: node.system || 'apache+php',
           ip_address: node.ip || '自动分配',
-          image: node.image || 'apache:php'
+          image: node.image || 'php:apache'
         }
         targetMachines.push(machine)
       }
