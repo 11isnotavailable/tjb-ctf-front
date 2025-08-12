@@ -28,7 +28,7 @@
         <!-- 导航菜单 - 改为左对齐而非居中 -->
         <div class="nav-section">
           <div class="nav-item" @click="goToHome"><el-icon><HomeFilled /></el-icon><span>首页</span></div>
-          <div class="nav-item"><el-icon><DataLine /></el-icon><span>平台介绍</span></div>
+          <div class="nav-item" @click="goToAbout"><el-icon><DataLine /></el-icon><span>平台介绍</span></div>
           <div class="nav-item" @click="goToQuestions"><el-icon><List /></el-icon><span>题目</span></div>
           <div class="nav-item" @click="goToLeaderboard"><el-icon><Trophy /></el-icon><span>排行榜</span></div>
           <div class="nav-item" @click="goToDeploy"><el-icon><Monitor /></el-icon><span>部署</span></div>
@@ -186,6 +186,10 @@ const handleTransitionComplete = () => {
 
 const goToHome = () => {
   router.push('/');
+};
+
+const goToAbout = () => {
+  router.push('/about');
 };
 const goToQuestions = () => {
   router.push('/home/questions');

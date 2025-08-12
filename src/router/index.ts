@@ -23,6 +23,12 @@ const routes = [
     meta: { requiresAuth: false, title: '注册' },
   },
   {
+    path: '/about',
+    name: 'About',
+    component: () => import('@/views/AboutView.vue'),
+    meta: { requiresAuth: false, title: '平台介绍' },
+  },
+  {
     path: '/home',
     component: () => import('@/components/layout/MainLayout.vue'),
     meta: { requiresAuth: true },
